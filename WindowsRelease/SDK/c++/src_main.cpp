@@ -144,7 +144,7 @@ int main() {
             // 输出交互指令
             printRobotCommand(robotId);
         }
-        if(frameID > 50)cerr << "dest:" << rt[0].curTask.destId << endl;
+        // if(frameID > 50)cerr << "dest:" << rt[0].curTask.destId << endl;
         // if(frameID > 50) debug();
         printf("OK\n");
         fflush(stdout);

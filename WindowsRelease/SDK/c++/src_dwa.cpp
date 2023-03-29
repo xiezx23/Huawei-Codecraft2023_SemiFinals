@@ -65,7 +65,7 @@ vec motionPredict(int rtIdx) {
     double daMax = type ? da1Max : da0Max;
 
     // 维护最佳路径
-    double score = -0.5;
+    double score = -INF;
     vec best = vec(0,0);
 
     // 设置速度单位采样变化量
@@ -87,7 +87,7 @@ vec motionPredict(int rtIdx) {
 
     // 根据设置的1帧后的速度和角速度，预测N帧后的位置和朝向，并维护最佳路径评估得分
     auto pathEvaluate = [&]() {
-        double w1 = (tmpasp + curAsp) / 2.0,v1 = (tmpasp + curLineSpeed) / 2.0;
+        double w1 = (tmpasp + curAsp) / 2.0,v1 = (tmpLineSpeed + curLineSpeed) / 2.0;
         tmpy = ly, tmpx = lx;
 
         // 假设速度大小、角速度变化均匀，故第一帧按平均速度、角速度计算
@@ -101,7 +101,7 @@ vec motionPredict(int rtIdx) {
         }
 
         // 假设后N-1帧速度大小、角速度不改变，计算位置和朝向
-        w1 = tmpasp, v1 = tmpasp;
+        w1 = tmpasp, v1 = tmpLineSpeed;
         if (fabs(w1) <= eps) {
             double tmp = v1 * dt * (N - 1);
             tmpx += tmp * cos(tmpToward);
