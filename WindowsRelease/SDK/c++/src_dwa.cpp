@@ -117,56 +117,35 @@ vec motionPredict(int rtIdx) {
         if (tmpScore > score) score = tmpScore, best.set(tmpLineSpeed,tmpasp);
     };
 
-
     // 总采样点数 : 4M^2 + 1
+    int left, i = 0;
+    double leftasp;
 
-    // 对[v,a]进行评估
-    pathEvaluate();
+    // 设置左侧采样空间偏移量
+    // 注释以下三行，即不考虑负向速度
+    i = (curLineSpeed + 2) / dv;
+    i = -i - 2;
+    if (i < - dwaM) i = -dwaM;
+
+    left = (curAsp + PI) / da;
+    left = -left - 2;
+    if (left < - dwaM) i = -dwaM;
+
+    tmpLineSpeed = curLineSpeed + i * dv;
+    while (tmpLineSpeed <= -2 - eps) tmpLineSpeed += dv, ++i;
+
+    leftasp = leftasp + left * da;
+    while (leftasp <= -PI - eps) leftasp += da, ++left;
 
 
-    // 对[v, v + dvMax]进行采样
-    for (int i = 0; i < dwaM; i++) {
-        tmpLineSpeed += dv;
+    for (; i <= dwaM; i++,tmpLineSpeed += dv) {
         if (tmpLineSpeed > 6 + eps) break;
-        tmpasp = curAsp;
-
-        // 对[a, a + daMax]进行采样
-        for (int j = 0; j < dwaM; j++) {
-            tmpasp += da;
+        tmpasp = leftasp;
+        for (int j = left; j <= dwaM; j++, tmpasp += da) {
             if (tmpasp > PI + eps) break;
-            pathEvaluate();
-        }
-
-        // 对[a - daMax, a]进行采样
-        tmpasp = curAsp;
-        for (int j = 0; j < dwaM; j++) {
-            tmpasp -= da;
-            if (tmpasp < -PI - eps) break;
             pathEvaluate();
         }
     }
 
-    // 对[v - dvMax, v]进行采样
-    tmpLineSpeed = curLineSpeed;
-    for (int i = 0; i < dwaM; i++) {
-        tmpLineSpeed -= dv;
-        if (tmpLineSpeed <= -2 - eps) break;
-        tmpasp = curAsp;
-
-        // 对[a, a + daMax]进行采样
-        for (int j = 0; j < dwaM; j++) {
-            tmpasp += da;
-            if (tmpasp > PI + eps) break;
-            pathEvaluate();
-        }
-
-        // 对[a - daMax, a]进行采样
-        tmpasp = curAsp;
-        for (int j = 0; j < dwaM; j++) {
-            tmpasp -= da;
-            if (tmpasp < -PI - eps) break;
-            pathEvaluate();
-        }
-    }
     return best;
 }
