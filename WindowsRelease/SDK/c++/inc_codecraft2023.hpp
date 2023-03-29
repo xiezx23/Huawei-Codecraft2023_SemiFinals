@@ -11,6 +11,7 @@
 #include "inc_mcmf.hpp"
 #include "inc_util.hpp"
 #include "inc_dwa.hpp"
+#include "inc_shorestpath.hpp"
 using namespace std;
 
 extern int K;                               // 工作台数

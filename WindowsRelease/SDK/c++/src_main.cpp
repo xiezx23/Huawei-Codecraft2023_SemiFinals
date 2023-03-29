@@ -31,21 +31,32 @@ map<int, std::vector<int>> type2BuyIndex;               // 根据产品类型寻
 pair<pair<int,int>,int> profitAndTime[WORKBENCH_SIZE];  // 记录收购价、购入价以及生产用时
 
 
-void init() {
-    // 初始化工作台信息
+void init() {    
+    // 读取地图信息
+    // 记录机器人的初始坐标
+    vector<coordinate2> robotLoc;
     K = 0;
     for(int i = 0; i < MAP_SIZE; ++i){
         for(int j = 0; j < MAP_SIZE; ++j){
-            if(isdigit(plat[i][j])) {
+            if (plat[i][j] == '#') {
+                obstacle[i][j] = true;
+            }
+            else if(isdigit(plat[i][j])) {
                 wb[K].type = plat[i][j] - '0';
+                workbenchLoc[coordinate2(i, j)] = K; 
                 wb[K++].reachable = true;
             }
-            if(plat[i][j] == 'A') N++;
+            else if(plat[i][j] == 'A') {
+                N++;
+                robotLoc.push_back(coordinate2(i, j));
+            }
         }
     }
+    initShorestPath(robotLoc);
     for (int i = 0; i < ROBOT_SIZE; ++i) {
         rt[i].rtIdx = i;
     }
+    // 记录每种物品的收益及生产周期
     profitAndTime[0] = make_pair(make_pair(0,0), INF);
     profitAndTime[1] = make_pair(make_pair(6000,3000), 50);
     profitAndTime[2] = make_pair(make_pair(7600,4400), 50);

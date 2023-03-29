@@ -8,8 +8,7 @@
 *.ps1
 
 #忽略具体文件
-log.txt
-result.txt
+*.txt
 
 #忽略文件夹内所有文件
 build/
