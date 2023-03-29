@@ -11,7 +11,7 @@
 #define poolSize        WORKBENCH_SIZE    //产品池最大大小
 #define maxNode         WORKBENCH_SIZE * 4 + ROBOT_SIZE * 2 + poolSize * 10
 
-#define DEBUG
+// #define DEBUG
 // #define ESTIMATE
 
 #endif

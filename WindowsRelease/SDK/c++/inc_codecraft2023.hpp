@@ -11,6 +11,7 @@
 #include "inc_mcmf.hpp"
 #include "inc_util.hpp"
 #include "inc_dwa.hpp"
+#include "inc_shorestpath.hpp"
 #include "inc_threadpool.hpp"
 using namespace std;
 
