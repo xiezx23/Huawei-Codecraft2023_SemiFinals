@@ -8,12 +8,12 @@ double dv1Max = 0.280491 * 100;       // 携带物品时线最大加速度
 double da0Max = 0.774646 * 100;       // 不携带物品时角最大加速度
 double da1Max = 0.401561 * 100;       // 携带物品时角最大加速度
 
-int dwaN = 10;                  // 预测N帧
+int dwaN = 5;                  // 预测N帧
 int dwaM = 10;                  // 速度空间采样点数
 const double dt = 0.02;         // 帧长度
 
-double dwa_para1 = 0.5;         // 势能分量系数
-double dwa_para2 = 0.25;        // 目标角度系数
+double dwa_para1 = -50;         // 势能分量系数
+double dwa_para2 = -0.25;        // 目标角度系数
 double dwa_para3 = 0.25;        // 有效速度系数
 
 
@@ -52,6 +52,7 @@ double motionEvaluate(coordinate position,int rtIdx,vec speed) {
     double v = dotProduct(p2d, speed) / modulusOfvector(p2d);
     
     return dwa_para1*pe + dwa_para2*heading + dwa_para3*v;
+    // return  dwa_para2*heading;
 }
 
 vec motionPredict(int rtIdx) {
@@ -64,7 +65,7 @@ vec motionPredict(int rtIdx) {
     double daMax = type ? da1Max : da0Max;
 
     // 维护最佳路径
-    double score = -0.5;
+    double score = -INF;
     vec best = vec(0,0);
 
     // 设置速度单位采样变化量
@@ -86,7 +87,7 @@ vec motionPredict(int rtIdx) {
 
     // 根据设置的1帧后的速度和角速度，预测N帧后的位置和朝向，并维护最佳路径评估得分
     auto pathEvaluate = [&]() {
-        double w1 = (tmpasp + curAsp) / 2.0,v1 = (tmpasp + curLineSpeed) / 2.0;
+        double w1 = (tmpasp + curAsp) / 2.0,v1 = (tmpLineSpeed + curLineSpeed) / 2.0;
         tmpy = ly, tmpx = lx;
 
         // 假设速度大小、角速度变化均匀，故第一帧按平均速度、角速度计算
@@ -100,13 +101,13 @@ vec motionPredict(int rtIdx) {
         }
 
         // 假设后N-1帧速度大小、角速度不改变，计算位置和朝向
-        w1 = tmpasp, v1 = tmpasp;
+        w1 = tmpasp, v1 = tmpLineSpeed;
         if (fabs(w1) <= eps) {
-            double tmp = v1 * dt * (N - 1);
+            double tmp = v1 * dt * (dwaN - 1);
             tmpx += tmp * cos(tmpToward);
             tmpy += tmp * sin(tmpToward);
         } else {
-            double tmp = w1 * dt * (N - 1);
+            double tmp = w1 * dt * (dwaN - 1);
             tmpx += v1/w1 * (sin(tmpToward) - sin(tmpToward + tmp));
             tmpy -= v1/w1 * (cos(tmpToward) - cos(tmpToward + tmp));
             tmpToward += tmp;
@@ -116,56 +117,34 @@ vec motionPredict(int rtIdx) {
         if (tmpScore > score) score = tmpScore, best.set(tmpLineSpeed,tmpasp);
     };
 
-
     // 总采样点数 : 4M^2 + 1
+    int left, i = 0, offest = 0;
+    double leftasp;
 
-    // 对[v,a]进行评估
-    pathEvaluate();
+pathEvaluate();
+    // 设置左侧采样空间偏移量
+    i = (curLineSpeed - offest) / dv;
+    i = -i - 2;
+    if (i < - dwaM) i = -dwaM;
 
+    left = (curAsp + PI) / da;
+    left = -left - 2;
+    if (left < - dwaM) i = -dwaM;
 
-    // 对[v, v + dvMax]进行采样
-    for (int i = 0; i < dwaM; i++) {
-        tmpLineSpeed += dv;
+    tmpLineSpeed = curLineSpeed + i * dv;
+    while (tmpLineSpeed <= offest - eps) tmpLineSpeed += dv, ++i;
+
+    leftasp = curAsp + left * da;
+    while (leftasp <= -PI - eps) leftasp += da, ++left;
+
+    for (; i <= dwaM; i++,tmpLineSpeed += dv) {
         if (tmpLineSpeed > 6 + eps) break;
-        tmpasp = curAsp;
-
-        // 对[a, a + daMax]进行采样
-        for (int j = 0; j < dwaM; j++) {
-            tmpasp += da;
+        tmpasp = leftasp;
+        for (int j = left; j <= dwaM; j++, tmpasp += da) {
             if (tmpasp > PI + eps) break;
-            pathEvaluate();
-        }
-
-        // 对[a - daMax, a]进行采样
-        tmpasp = curAsp;
-        for (int j = 0; j < dwaM; j++) {
-            tmpasp -= da;
-            if (tmpasp < -PI - eps) break;
             pathEvaluate();
         }
     }
 
-    // 对[v - dvMax, v]进行采样
-    tmpLineSpeed = curLineSpeed;
-    for (int i = 0; i < dwaM; i++) {
-        tmpLineSpeed -= dv;
-        if (tmpLineSpeed <= -2 - eps) break;
-        tmpasp = curAsp;
-
-        // 对[a, a + daMax]进行采样
-        for (int j = 0; j < dwaM; j++) {
-            tmpasp += da;
-            if (tmpasp > PI + eps) break;
-            pathEvaluate();
-        }
-
-        // 对[a - daMax, a]进行采样
-        tmpasp = curAsp;
-        for (int j = 0; j < dwaM; j++) {
-            tmpasp -= da;
-            if (tmpasp < -PI - eps) break;
-            pathEvaluate();
-        }
-    }
     return best;
 }
