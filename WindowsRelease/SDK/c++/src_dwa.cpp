@@ -12,8 +12,8 @@ int dwaN = 10;                  // 预测N帧
 int dwaM = 10;                  // 速度空间采样点数
 const double dt = 0.02;         // 帧长度
 
-double dwa_para1 = 0.5;         // 势能分量系数
-double dwa_para2 = 0.25;        // 目标角度系数
+double dwa_para1 = -0.5;         // 势能分量系数
+double dwa_para2 = -0.25;        // 目标角度系数
 double dwa_para3 = 0.25;        // 有效速度系数
 
 
@@ -51,7 +51,8 @@ double motionEvaluate(coordinate position,int rtIdx,vec speed) {
     // caculate V(speed), velocity to destination
     double v = dotProduct(p2d, speed) / modulusOfvector(p2d);
     
-    return dwa_para1*pe + dwa_para2*heading + dwa_para3*v;
+    // return dwa_para1*pe + dwa_para2*heading + dwa_para3*v;
+    return dwa_para2*heading;
 }
 
 vec motionPredict(int rtIdx) {
