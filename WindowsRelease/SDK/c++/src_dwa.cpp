@@ -8,11 +8,11 @@ double dv1Max = 0.280491 * 100;       // 携带物品时线最大加速度
 double da0Max = 0.774646 * 100;       // 不携带物品时角最大加速度
 double da1Max = 0.401561 * 100;       // 携带物品时角最大加速度
 
-int dwaN = 10;                  // 预测N帧
+int dwaN = 5;                  // 预测N帧
 int dwaM = 10;                  // 速度空间采样点数
 const double dt = 0.02;         // 帧长度
 
-double dwa_para1 = -0.5;         // 势能分量系数
+double dwa_para1 = -50;         // 势能分量系数
 double dwa_para2 = -0.25;        // 目标角度系数
 double dwa_para3 = 0.25;        // 有效速度系数
 
@@ -51,8 +51,8 @@ double motionEvaluate(coordinate position,int rtIdx,vec speed) {
     // caculate V(speed), velocity to destination
     double v = dotProduct(p2d, speed) / modulusOfvector(p2d);
     
-    // return dwa_para1*pe + dwa_para2*heading + dwa_para3*v;
-    return dwa_para2*heading;
+    return dwa_para1*pe + dwa_para2*heading + dwa_para3*v;
+    // return  dwa_para2*heading;
 }
 
 vec motionPredict(int rtIdx) {
@@ -103,11 +103,11 @@ vec motionPredict(int rtIdx) {
         // 假设后N-1帧速度大小、角速度不改变，计算位置和朝向
         w1 = tmpasp, v1 = tmpLineSpeed;
         if (fabs(w1) <= eps) {
-            double tmp = v1 * dt * (N - 1);
+            double tmp = v1 * dt * (dwaN - 1);
             tmpx += tmp * cos(tmpToward);
             tmpy += tmp * sin(tmpToward);
         } else {
-            double tmp = w1 * dt * (N - 1);
+            double tmp = w1 * dt * (dwaN - 1);
             tmpx += v1/w1 * (sin(tmpToward) - sin(tmpToward + tmp));
             tmpy -= v1/w1 * (cos(tmpToward) - cos(tmpToward + tmp));
             tmpToward += tmp;
@@ -118,12 +118,12 @@ vec motionPredict(int rtIdx) {
     };
 
     // 总采样点数 : 4M^2 + 1
-    int left, i = 0;
+    int left, i = 0, offest = 0;
     double leftasp;
 
+pathEvaluate();
     // 设置左侧采样空间偏移量
-    // 注释以下三行，即不考虑负向速度
-    i = (curLineSpeed + 2) / dv;
+    i = (curLineSpeed - offest) / dv;
     i = -i - 2;
     if (i < - dwaM) i = -dwaM;
 
@@ -132,11 +132,10 @@ vec motionPredict(int rtIdx) {
     if (left < - dwaM) i = -dwaM;
 
     tmpLineSpeed = curLineSpeed + i * dv;
-    while (tmpLineSpeed <= -2 - eps) tmpLineSpeed += dv, ++i;
+    while (tmpLineSpeed <= offest - eps) tmpLineSpeed += dv, ++i;
 
-    leftasp = leftasp + left * da;
+    leftasp = curAsp + left * da;
     while (leftasp <= -PI - eps) leftasp += da, ++left;
-
 
     for (; i <= dwaM; i++,tmpLineSpeed += dv) {
         if (tmpLineSpeed > 6 + eps) break;
