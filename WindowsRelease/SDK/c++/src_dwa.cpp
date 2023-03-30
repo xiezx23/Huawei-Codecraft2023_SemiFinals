@@ -30,10 +30,10 @@ double motionEvaluate(coordinate position,int rtIdx,vec speed) {
 
     // check distence from robot to the wall
     if (fabs(position.x) <= robotRadius || fabs(position.x - 50.0) <= robotRadius) {
-        return -1;
+        return -INF + 1;
     }
     else if (fabs(position.y) <= robotRadius || fabs(position.y - 50.0) <= robotRadius) {
-        return -1;
+        return -INF + 1;
     }
 
     // caculate Pe(position)
@@ -64,9 +64,6 @@ vec motionPredict(int rtIdx) {
     double dvMax = type ? dv1Max : dv0Max;
     double daMax = type ? da1Max : da0Max;
 
-    // 维护最佳路径
-    double score = -INF;
-    vec best = vec(0,0);
 
     // 设置速度单位采样变化量
     dvMax = dvMax * dt;
@@ -84,6 +81,10 @@ vec motionPredict(int rtIdx) {
     double curToward = bot.toward;
 
     double tmpasp = curAsp, tmpLineSpeed = curLineSpeed;
+
+    // 维护最佳路径
+    double score = -INF;
+    vec best = vec(curLineSpeed,curAsp);
 
     // 根据设置的1帧后的速度和角速度，预测N帧后的位置和朝向，并维护最佳路径评估得分
     auto pathEvaluate = [&]() {
@@ -121,22 +122,29 @@ vec motionPredict(int rtIdx) {
     int left, i = 0, offest = 0;
     double leftasp;
 
-    pathEvaluate();
-    // 设置左侧采样空间偏移量
-
+    // 设置左侧采样空间偏移量,保留[-dwaM]
     i = (curLineSpeed - offest) / dv;
-    i = -i - 2;
-    if (i < - dwaM) i = -dwaM;
+    i = max(-i - 2 , -dwaM + 1);
 
     left = (curAsp + PI) / da;
-    left = -left - 2;
-    if (left < - dwaM) left = -dwaM;
+    left = max(-left - 2, -dwaM);
+
+    leftasp = curAsp + left * da;
+    while (leftasp <= -PI - eps) leftasp += da, ++left;
+
+    {
+        tmpLineSpeed = max(-2.0,min(6.0,tmpLineSpeed));
+        tmpasp = min(leftasp,PI);
+        for (int j = left; j <= dwaM; j++, tmpasp += da) {
+            if (tmpasp > PI + eps) break;
+            pathEvaluate();
+        }
+    }
 
     tmpLineSpeed = curLineSpeed + i * dv;
     while (tmpLineSpeed <= offest - eps) tmpLineSpeed += dv, ++i;
 
-    leftasp = curAsp + left * da;
-    while (leftasp <= -PI - eps) leftasp += da, ++left;
+
 
     for (; i <= dwaM; i++,tmpLineSpeed += dv) {
         if (tmpLineSpeed > 6 + eps) break;
@@ -147,7 +155,6 @@ vec motionPredict(int rtIdx) {
         }
     }
 
-    if (frameID == 3668 && rtIdx == 1) cerr<<"     "<<best.x<<"     "<<best.y<<endl;
 
     return best;
 }
