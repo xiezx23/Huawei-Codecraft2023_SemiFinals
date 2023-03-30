@@ -32,6 +32,11 @@ void readInfo() {
             &rt[i].asp,
             &x, &y // lsp
         ); rt[i].lsp.set(x, y);
+
+        vec &curSpeed = rt[i].lsp;
+        double curLineSpeed = modulusOfvector(curSpeed);
+        if (curLineSpeed > 6) cerr<<"1error Sx:" <<curSpeed.x<<" Sy:" <<curSpeed.y<<endl;
+        if (curLineSpeed > 6) cerr<<"1error x:" <<x<<" y:" <<y<<endl;
         scanf("%lf %lf %lf",
             &rt[i].toward,
             &x, &y // location
