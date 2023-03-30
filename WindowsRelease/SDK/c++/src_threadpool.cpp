@@ -1,5 +1,19 @@
 #include "inc_threadpool.hpp"
 
+void safeNum::add(int n = 1) {
+    c_mutex.lock();
+    num += n;
+    c_mutex.unlock();
+}
+void safeNum::sub(int n = 1) {
+    c_mutex.lock();
+    num -= n;
+    c_mutex.unlock();
+}
+int safeNum::size() {
+    return num;
+}
+
 bool safeQueue::empty() {
     m_mutex.lock();
     bool ret = m_queue.empty();
@@ -32,19 +46,23 @@ void* threadPool::threadWork(void *arg) {
             std::unique_lock<std::mutex> lock(tpPtr->tCond_mutex);
             // 任务队列空就阻塞线程
             if (tpPtr->taskQueue.empty()) {
-                // cerr << "thread sleep...\n";
+                cerr << "thread sleep...\n";
+                tpPtr->runningSize.sub();
                 tpPtr->tCond.wait(lock);
+                tpPtr->runningSize.add();
             }
             // 从任务队列选择任务执行
-            // cerr << "thread awake!\n";
+            cerr << "thread awake!\n";
             haveWork = tpPtr->taskQueue.dequeue(todo);
         }
         if (haveWork) todo.work(todo.arg);
     }
+    tpPtr->runningSize.sub();
     return NULL;
 }
 threadPool::threadPool(int threadNum) {
     threadSize = threadNum;
+    runningSize.add(threadSize);
     tid = new pthread_t[threadSize];
     for (int i = 0; i < threadSize; ++i) {
         pthread_create(&tid[i], NULL, threadWork, (void *)this);
@@ -62,6 +80,11 @@ void threadPool::addWork(void (*work)(void*), void* arg) {
         tCond.notify_one();
     }
 }
+void threadPool::waitFinish() {
+    while(runningSize.size() > 0 || !taskQueue.empty()) {}
+    cout << "all works are finished\n";
+}
+
 void threadPool::exit() {
     close = true;
     tCond.notify_all();

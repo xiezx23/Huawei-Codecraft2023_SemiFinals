@@ -4,9 +4,10 @@
 /********************************
  *  <假设线程池名字 tpName, 线程数为 threadSize>
  * 
- *  声明线程池: threadPool* tpName = new threadPool(threadSize); 
- *  销毁线程池: tpName->exit();
- *  加入任务:   tpName->addWork(void* (void*), void*);
+ *  声明线程池:   threadPool* tpName = new threadPool(threadSize); 
+ *  销毁线程池:   tpName->exit();
+ *  加入任务:     tpName->addWork(void* (void*), void*);
+ *  等待任务完成: tpName->waitFinish();
  *  
  *  示例代码
 void hello(void* a) {
@@ -14,8 +15,10 @@ void hello(void* a) {
 }
 int main() {
     threadPool* tp = new threadPool(4);
+    tp->waitFinish();
     int a = 11;
     tp->addWork(&hello, (void*)&a);
+    tp->waitFinish();
     tp->exit();
     return 0;
 }
@@ -27,6 +30,18 @@ struct threadTask {
     void* arg;
     threadTask() {}
     threadTask(std::function<void(void*)> _work, void* _arg):work(_work),arg(_arg){}
+};
+
+// 并行安全的变量
+struct safeNum {
+private:
+    int num;
+    std::mutex c_mutex;
+public:
+    safeNum() {num = 0;}
+    void add(int n = 1);
+    void sub(int n = 1);
+    int size();
 };
 
 // 并行安全的队列
@@ -50,6 +65,7 @@ private:
     safeQueue taskQueue;            // 任务队列 
     std::mutex tCond_mutex;         // 休眠锁
     std::condition_variable tCond;  // 条件变量
+    safeNum runningSize;            // 运行中线程数
     static void* threadWork(void *arg); // 线程回调函数
 
 public:
@@ -57,6 +73,7 @@ public:
     threadPool(int threadNum);
     ~threadPool() {delete(tid);}
     void addWork(void (*work)(void*), void* arg);
+    void waitFinish();
     void exit();
 };
 
