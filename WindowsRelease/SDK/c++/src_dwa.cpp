@@ -118,12 +118,12 @@ vec motionPredict(int rtIdx) {
     };
 
     // 总采样点数 : 4M^2 + 1
-    int left, i = 0;
+    int left, i = 0, offest = 0;
     double leftasp;
 
     // 设置左侧采样空间偏移量
     // 注释以下三行，即不考虑负向速度
-    i = (curLineSpeed + 2) / dv;
+    i = (curLineSpeed - offest) / dv;
     i = -i - 2;
     if (i < - dwaM) i = -dwaM;
 
@@ -132,7 +132,7 @@ vec motionPredict(int rtIdx) {
     if (left < - dwaM) i = -dwaM;
 
     tmpLineSpeed = curLineSpeed + i * dv;
-    while (tmpLineSpeed <= -2 - eps) tmpLineSpeed += dv, ++i;
+    while (tmpLineSpeed <= offest - eps) tmpLineSpeed += dv, ++i;
 
     leftasp = leftasp + left * da;
     while (leftasp <= -PI - eps) leftasp += da, ++left;
