@@ -48,6 +48,7 @@ void* threadPool::threadWork(void *arg) {
             if (tpPtr->taskQueue.empty()) {
                 cerr << "thread sleep...\n";
                 tpPtr->runningSize.sub();
+                if (tpPtr->runningSize.size() == 0) tpPtr->mainThreadCond.notify_one();
                 tpPtr->tCond.wait(lock);
                 tpPtr->runningSize.add();
             }
@@ -81,10 +82,13 @@ void threadPool::addWork(void (*work)(void*), void* arg) {
     }
 }
 void threadPool::waitFinish() {
-    while(runningSize.size() > 0 || !taskQueue.empty()) {}
-    cout << "all works are finished\n";
+    while(runningSize.size() > 0 || !taskQueue.empty()) {
+        std::unique_lock<std::mutex> lock(mTrea_mutex);
+        cerr << "wait for branch threads\n";
+        mainThreadCond.wait(lock);
+    }
+    cerr << "all works are finished\n";
 }
-
 void threadPool::exit() {
     close = true;
     tCond.notify_all();
