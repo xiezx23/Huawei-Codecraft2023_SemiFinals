@@ -13,27 +13,22 @@ void safeNum::sub(int n) {
 int safeNum::size() {
     return num;
 }
-
 bool safeQueue::empty() {
-    m_mutex.lock();
+    std::unique_lock<std::mutex> lock(m_mutex);
     bool ret = m_queue.empty();
-    m_mutex.unlock();
     return ret;
 }
 void safeQueue::push(threadTask& task) {
-    m_mutex.lock();
+    std::unique_lock<std::mutex> lock(m_mutex);
     m_queue.push(task);
-    m_mutex.unlock();
 } 
 bool safeQueue::dequeue(threadTask& task) {
-    m_mutex.lock();
+    std::unique_lock<std::mutex> lock(m_mutex);
     if (m_queue.empty()) {
-        m_mutex.unlock();
         return false;
     }
     task = std::move(m_queue.front());
     m_queue.pop();
-    m_mutex.unlock();
     return true;
 } 
 
@@ -48,6 +43,7 @@ void* threadPool::threadWork(void *arg) {
             if (tpPtr->taskQueue.empty()) {
                 cerr << "thread sleep...\n";
                 tpPtr->runningSize.sub();
+                cout << "alive thread num:" << tpPtr->runningSize.size() << "\n";
                 if (tpPtr->runningSize.size() == 0) tpPtr->mainThreadCond.notify_one();
                 tpPtr->tCond.wait(lock);
                 tpPtr->runningSize.add();
@@ -84,11 +80,12 @@ void threadPool::addWork(void (*work)(void*), void* arg) {
 void threadPool::waitFinish() {
     while(runningSize.size() > 0 || !taskQueue.empty()) {
         std::unique_lock<std::mutex> lock(mTrea_mutex);
-        cerr << "wait for branch threads\n";
+        cerr << "wait for branch thread\n";
         mainThreadCond.wait(lock);
     }
     cerr << "all works are finished\n";
 }
+
 void threadPool::exit() {
     close = true;
     tCond.notify_all();
