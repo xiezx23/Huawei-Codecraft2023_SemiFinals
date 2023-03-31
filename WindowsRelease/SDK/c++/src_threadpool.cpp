@@ -1,11 +1,11 @@
 #include "inc_threadpool.hpp"
 
-void safeNum::add(int n = 1) {
+void safeNum::add(int n) {
     c_mutex.lock();
     num += n;
     c_mutex.unlock();
 }
-void safeNum::sub(int n = 1) {
+void safeNum::sub(int n) {
     c_mutex.lock();
     num -= n;
     c_mutex.unlock();
