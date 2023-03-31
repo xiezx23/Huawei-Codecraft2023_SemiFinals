@@ -60,13 +60,15 @@ public:
 struct threadPool {
 private:
     int threadSize;                 // 线程数
+    safeNum runningSize;            // 运行中线程数
     pthread_t* tid;                 // 维护tid
     bool close = false;             // 关闭开关
     safeQueue taskQueue;            // 任务队列 
-    std::mutex tCond_mutex;         // 休眠锁
-    std::condition_variable tCond;  // 条件变量
-    safeNum runningSize;            // 运行中线程数
-    static void* threadWork(void *arg); // 线程回调函数
+    std::mutex tCond_mutex;         // 分支线程休眠锁
+    std::mutex mTrea_mutex;         // 主线程休眠锁
+    std::condition_variable tCond;          // 分支线程条件变量
+    std::condition_variable mainThreadCond; // 控制主线程阻塞
+    static void* threadWork(void *arg);     // 线程回调函数
 
 public:
     threadPool() {}
