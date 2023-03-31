@@ -8,31 +8,34 @@ double dv1Max = 0.280491 * 50;       // 携带物品时线最大加速度
 double da0Max = 0.774646 * 50;       // 不携带物品时角最大加速度
 double da1Max = 0.401561 * 50;       // 携带物品时角最大加速度
 
-#define dwaN  10                  // 预测N帧
+#define dwaN  20                  // 预测N帧
 #define dwaM 10                  // 速度空间采样点数
 const double dt = 0.02;         // 帧长度
 
-double dwa_para1 = -1;         // 势能分量系数
-double dwa_para2 = -9;        // 目标角度系数
+double dwa_para1 = -0;         // 势能分量系数
+double dwa_para2 = -0;        // 目标角度系数
 double dwa_para3 = 1;        // 有效速度系数
 
 
-double recordData[4][2*dwaM][2*dwaM];
-double recordSum[4];
+double recordData[2*dwaM][2*dwaM][4];
+double recordSum[3];
 
 void cleanData() {
-    for (int i = 0; i < 4; ++i) {
-        recordSum[i] = 0;
-    }
+    memset(recordSum, 0, sizeof(recordSum));
     memset(recordData, 0, sizeof(recordData));
 }
 
 double getEvaluate(int vidx, int aidx) {
-    if (recordData[3][vidx][aidx] == INF) return -INF;
-    double pe = recordData[0][vidx][aidx] / recordSum[0];
-    double heading = recordData[1][vidx][aidx] / recordSum[1];
-    double v = recordData[2][vidx][aidx] / recordSum[2];
-    return  dwa_para1*pe + dwa_para2*heading + dwa_para3*v;
+    if (recordData[vidx][aidx][3] == INF) return -INF;
+    double pe = recordData[vidx][aidx][0] / recordSum[0];
+    if (isnan(pe)) pe = 0;
+    double heading = recordData[vidx][aidx][1] / recordSum[1];
+    if (isnan(heading)) heading = 0;
+    double v = recordData[vidx][aidx][2] / recordSum[2];
+    if (isnan(v)) v = 0;
+    double ans = dwa_para2 * heading + dwa_para3 * v;
+        // cerr << pe << ' ' << heading << ' ' << v << endl;
+    return ans;
 }
 
 // G(v, w) = dwa_para1*Pe(position) + dwa_para2*H(loca, dest, speed) + dwa_para3*V(speed)
@@ -48,11 +51,11 @@ void motionEvaluate(coordinate position,int rtIdx,vec speed, int vidx, int aidx)
 
     // check distence from robot to the wall
     if (fabs(position.x) <= robotRadius || fabs(position.x - 50.0) <= robotRadius) {
-        recordData[3][vidx][aidx] = INF;
+        recordData[vidx][aidx][3] = INF;
         return;
     }
     else if (fabs(position.y) <= robotRadius || fabs(position.y - 50.0) <= robotRadius) {
-        recordData[3][vidx][aidx] = INF;
+        recordData[vidx][aidx][3] = INF;
         return;
     }
 
@@ -64,19 +67,19 @@ void motionEvaluate(coordinate position,int rtIdx,vec speed, int vidx, int aidx)
         }
     }
     if (pe < 0.3) pe = 0;
-    recordData[0][vidx][aidx] = pe;
+    recordData[vidx][aidx][0] = pe;
     recordSum[0] += pe;
 
     // caculate H(position, dest, speed)
     vec p2d(dest.x - position.x, dest.y - position.y);
     double heading = cntAngle(p2d, speed);
-    recordData[1][vidx][aidx] = heading;
+    recordData[vidx][aidx][1] = heading;
     recordSum[1] += heading;
 
     // caculate V(speed), velocity to destination
     double v = dotProduct(p2d, speed) / modulusOfvector(p2d);
-    recordData[2][vidx][aidx] = v;
-    recordSum[2] += v;
+    recordData[vidx][aidx][2] = v;
+    recordSum[2] += fabs(v);
 }
 
 vec motionPredict(int rtIdx) {
@@ -180,7 +183,7 @@ vec motionPredict(int rtIdx) {
 
     auto checkValue = [&](int i, int j) {
         double value = getEvaluate(i,j);
-        if (rtIdx == 1) fprintf(stderr,"frameId: %d, value: %f\n",frameID, value);
+        // if (rtIdx == 1) fprintf(stderr,"frameId: %d, value: %f\n",frameID, value);
         if (value > score) score = value, best.set(tmpLineSpeed,tmpasp);
     };
 
