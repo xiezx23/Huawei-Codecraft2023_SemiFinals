@@ -8,7 +8,7 @@ double dv1Max = 0.280491 * 50;       // 携带物品时线最大加速度
 double da0Max = 0.774646 * 50;       // 不携带物品时角最大加速度
 double da1Max = 0.401561 * 50;       // 携带物品时角最大加速度
 
-#define dwaN  1                  // 预测N帧
+#define dwaN  10                  // 预测N帧
 #define dwaM 10                  // 速度空间采样点数
 const double dt = 0.02;         // 帧长度
 
@@ -17,16 +17,14 @@ double dwa_para2 = -9;        // 目标角度系数
 double dwa_para3 = 1;        // 有效速度系数
 
 
-double recordData[4][dwaM][dwaM];
+double recordData[4][2*dwaM][2*dwaM];
 double recordSum[4];
 
 void cleanData() {
     for (int i = 0; i < 4; ++i) {
         recordSum[i] = 0;
-        for (int j = 0; j < dwaM; ++j) {
-            memset(recordData[i][j], 0, sizeof(recordData[i][j]));
-        }
     }
+    memset(recordData, 0, sizeof(recordData));
 }
 
 double getEvaluate(int vidx, int aidx) {
@@ -82,8 +80,9 @@ void motionEvaluate(coordinate position,int rtIdx,vec speed, int vidx, int aidx)
 }
 
 vec motionPredict(int rtIdx) {
+    cleanData();
+    
     const double eps = 1e-6;
-
     // 获取机器人最大加速度
     robot &bot = rt[rtIdx];
     int type = bot.pd_id > 0;
@@ -113,7 +112,7 @@ vec motionPredict(int rtIdx) {
     vec best = vec(curLineSpeed,curAsp);
 
     // 根据设置的1帧后的速度和角速度，预测N帧后的位置和朝向，并维护最佳路径评估得分
-    auto pathEvaluate = [&]() {
+    auto pathEvaluate = [&](int i,int j) {
         double w1 = (tmpasp + curAsp) / 2.0,v1 = (tmpLineSpeed + curLineSpeed) / 2.0;
         tmpy = ly, tmpx = lx;
 
@@ -139,13 +138,12 @@ vec motionPredict(int rtIdx) {
             tmpy -= v1/w1 * (cos(tmpToward) - cos(tmpToward + tmp));
             tmpToward += tmp;
         }
-
-        double tmpScore = motionEvaluate(vec(tmpx,tmpy),rtIdx,vec(v1*cos(tmpToward),v1*sin(tmpToward)));
-        if (tmpScore > score) score = tmpScore, best.set(tmpLineSpeed,tmpasp);
+        motionEvaluate(vec(tmpx,tmpy),rtIdx,vec(v1*cos(tmpToward),v1*sin(tmpToward)),i,j);
+        
     };
 
     // 总采样点数 : 4M^2 + 1
-    int left, i = 0, offest = 0;
+    int left, i = 0, offest = 0, lefti;
     double leftasp;
 
     // 设置左侧采样空间偏移量,保留[-dwaM]
@@ -153,34 +151,58 @@ vec motionPredict(int rtIdx) {
     i = max(-i - 2 , -dwaM + 1);
 
     left = (curAsp + PI) / da;
-    left = max(-left - 2, -dwaM);
+    left = max(-left - 2, -dwaM + 1);
 
     leftasp = curAsp + left * da;
     while (leftasp <= -PI - eps) leftasp += da, ++left;
 
     {
-        tmpLineSpeed = max(-2.0,min(6.0,tmpLineSpeed));
-        tmpasp = min(leftasp,PI);
-        for (int j = left; j <= dwaM; j++, tmpasp += da) {
+        tmpLineSpeed = max(-2.0,min(6.0,curLineSpeed));
+        tmpasp = min(curAsp,PI);
+        for (int j = left; j < dwaM; j++, tmpasp += da) {
             if (tmpasp > PI + eps) break;
-            pathEvaluate();
+            pathEvaluate(0,j + dwaM);
         }
     }
 
     tmpLineSpeed = curLineSpeed + i * dv;
     while (tmpLineSpeed <= offest - eps) tmpLineSpeed += dv, ++i;
+    lefti = i;
 
-
-
-    for (; i <= dwaM; i++,tmpLineSpeed += dv) {
+    for (; i < dwaM; i++,tmpLineSpeed += dv) {
         if (tmpLineSpeed > 6 + eps) break;
         tmpasp = leftasp;
-        for (int j = left; j <= dwaM; j++, tmpasp += da) {
+        for (int j = left; j < dwaM; j++, tmpasp += da) {
             if (tmpasp > PI + eps) break;
-            pathEvaluate();
+            pathEvaluate(i + dwaM, j + dwaM);
         }
     }
 
+    auto checkValue = [&](int i, int j) {
+        double value = getEvaluate(i,j);
+        if (rtIdx == 1) fprintf(stderr,"frameId: %d, value: %f\n",frameID, value);
+        if (value > score) score = value, best.set(tmpLineSpeed,tmpasp);
+    };
+
+    {
+        tmpLineSpeed = max(-2.0,min(6.0,curLineSpeed));
+        tmpasp = min(curAsp,PI);
+        for (int j = left; j < dwaM; j++, tmpasp += da) {
+            if (tmpasp > PI + eps) break;
+            checkValue(0,j + dwaM);
+        }
+    }
+
+    i = lefti, tmpLineSpeed = curLineSpeed + i * dv;
+
+    for (; i < dwaM; i++,tmpLineSpeed += dv) {
+        if (tmpLineSpeed > 6 + eps) break;
+        tmpasp = leftasp;
+        for (int j = left; j < dwaM; j++, tmpasp += da) {
+            if (tmpasp > PI + eps) break;
+            checkValue(i+dwaM,j+dwaM);
+        }
+    }
 
     return best;
 }
