@@ -3,22 +3,42 @@
  * @Description: 
  *      带势能场的 DWA 动态避障算法
  ***/
-double dv0Max = 0.392155 * 100;       // 不携带物品时线最大加速度
-double dv1Max = 0.280491 * 100;       // 携带物品时线最大加速度
-double da0Max = 0.774646 * 100;       // 不携带物品时角最大加速度
-double da1Max = 0.401561 * 100;       // 携带物品时角最大加速度
+double dv0Max = 0.392155 * 50;       // 不携带物品时线最大加速度
+double dv1Max = 0.280491 * 50;       // 携带物品时线最大加速度
+double da0Max = 0.774646 * 50;       // 不携带物品时角最大加速度
+double da1Max = 0.401561 * 50;       // 携带物品时角最大加速度
 
-int dwaN = 5;                  // 预测N帧
-int dwaM = 10;                  // 速度空间采样点数
+#define dwaN  1                  // 预测N帧
+#define dwaM 10                  // 速度空间采样点数
 const double dt = 0.02;         // 帧长度
 
-double dwa_para1 = -50;         // 势能分量系数
-double dwa_para2 = -0.25;        // 目标角度系数
-double dwa_para3 = 0.25;        // 有效速度系数
+double dwa_para1 = -1;         // 势能分量系数
+double dwa_para2 = -9;        // 目标角度系数
+double dwa_para3 = 1;        // 有效速度系数
 
+
+double recordData[4][dwaM][dwaM];
+double recordSum[4];
+
+void cleanData() {
+    for (int i = 0; i < 4; ++i) {
+        recordSum[i] = 0;
+        for (int j = 0; j < dwaM; ++j) {
+            memset(recordData[i][j], 0, sizeof(recordData[i][j]));
+        }
+    }
+}
+
+double getEvaluate(int vidx, int aidx) {
+    if (recordData[3][vidx][aidx] == INF) return -INF;
+    double pe = recordData[0][vidx][aidx] / recordSum[0];
+    double heading = recordData[1][vidx][aidx] / recordSum[1];
+    double v = recordData[2][vidx][aidx] / recordSum[2];
+    return  dwa_para1*pe + dwa_para2*heading + dwa_para3*v;
+}
 
 // G(v, w) = dwa_para1*Pe(position) + dwa_para2*H(loca, dest, speed) + dwa_para3*V(speed)
-double motionEvaluate(coordinate position,int rtIdx,vec speed) {
+void motionEvaluate(coordinate position,int rtIdx,vec speed, int vidx, int aidx) {
     // Detect the location to confirm it is in the map
     robot& rbt = rt[rtIdx];
     coordinate& dest = rbt.haveTemDest ? rbt.temDest : rbt.curTask.destCo;
@@ -30,10 +50,12 @@ double motionEvaluate(coordinate position,int rtIdx,vec speed) {
 
     // check distence from robot to the wall
     if (fabs(position.x) <= robotRadius || fabs(position.x - 50.0) <= robotRadius) {
-        return -INF + 1;
+        recordData[3][vidx][aidx] = INF;
+        return;
     }
     else if (fabs(position.y) <= robotRadius || fabs(position.y - 50.0) <= robotRadius) {
-        return -INF + 1;
+        recordData[3][vidx][aidx] = INF;
+        return;
     }
 
     // caculate Pe(position)
@@ -43,16 +65,20 @@ double motionEvaluate(coordinate position,int rtIdx,vec speed) {
             pe += cntPontEnergy(otherRtIdx, position);
         }
     }
+    if (pe < 0.3) pe = 0;
+    recordData[0][vidx][aidx] = pe;
+    recordSum[0] += pe;
 
     // caculate H(position, dest, speed)
     vec p2d(dest.x - position.x, dest.y - position.y);
     double heading = cntAngle(p2d, speed);
+    recordData[1][vidx][aidx] = heading;
+    recordSum[1] += heading;
 
     // caculate V(speed), velocity to destination
     double v = dotProduct(p2d, speed) / modulusOfvector(p2d);
-    
-    // return dwa_para1*pe + dwa_para2*heading + dwa_para3*v;
-    return  dwa_para2*heading;
+    recordData[2][vidx][aidx] = v;
+    recordSum[2] += v;
 }
 
 vec motionPredict(int rtIdx) {
