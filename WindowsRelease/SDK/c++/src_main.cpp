@@ -36,26 +36,27 @@ void init() {
     // 记录机器人的初始坐标
     vector<coordinate2> robotLoc;
     K = 0;
+    
     for(int i = 0; i < MAP_SIZE; ++i){
         for(int j = 0; j < MAP_SIZE; ++j){
             if (plat[i][j] == '#') {
-                obstacle[i][j] = true;
+                obstacle[j][MAP_SIZE-i-1] = true;
             }
             else if(isdigit(plat[i][j])) {
                 wb[K].type = plat[i][j] - '0';
-                workbenchLoc[coordinate2(i, j)] = K; 
-                wb[K++].reachable = true;
+                workbenchLoc[coordinate2(j, MAP_SIZE-i-1)] = K; 
+                wb[K++].reachable = true;                
             }
             else if(plat[i][j] == 'A') {
                 N++;
-                robotLoc.push_back(coordinate2(i, j));
+                robotLoc.push_back(coordinate2(j, MAP_SIZE-i-1));
             }
         }
     }
-    initShorestPath(robotLoc);
     for (int i = 0; i < ROBOT_SIZE; ++i) {
         rt[i].rtIdx = i;
     }
+    initShorestPath(robotLoc);
     // 记录每种物品的收益及生产周期
     profitAndTime[0] = make_pair(make_pair(0,0), INF);
     profitAndTime[1] = make_pair(make_pair(6000,3000), 50);
@@ -139,13 +140,14 @@ int main() {
         readInfo();
         printf("%d\n", frameID);
         /**** CORE ****/   
-        if ((K==25 || K == 18)&&frameID <= 8000) {
-            curFlow.solution();
-            if (frameID == 8000) curFlow.switcher();
-        }
-        else {
-            ori_solution();
-        }
+        // if ((K==25 || K == 18)&&frameID <= 8000) {
+        //     curFlow.solution();
+        //     if (frameID == 8000) curFlow.switcher();
+        // }
+        // else {
+        //     ori_solution();
+        // }
+        ori_solution();
         // curFlow.solution();
         /**************/
         for(int robotId = 0; robotId < ROBOT_SIZE; robotId++){  

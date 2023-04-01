@@ -6,11 +6,15 @@ void mission::set(int s, int e, int p) {
     proType = p;
 }
 
-void mission::countValue(coordinate& rtCo, int proType, vec& lsp) {
+void mission::countValue(int rtidx, int proType, vec& lsp) {
+    coordinate& rtCo = rt[rtidx].location;
     // 计算价值函数 参数依次为机器人坐标、预计携带产品类型、机器人速度向量
     coordinate s = wb[startIndex].location;
     coordinate e = wb[endIndex].location;
-    double dd = dis(rtCo, s) + dis(s, e);   // 机器人到起点再到终点的距离
+    // double dd = dis(rtCo, s) + dis(s, e);   // 机器人到起点再到终点的距离    
+    double dd = pathLength[rtidx*WORKBENCH_SIZE+startIndex] + pathLength[rtidx*WORKBENCH_SIZE+endIndex];
+    if (!pathSize[rtidx*WORKBENCH_SIZE+startIndex]) dd = INF;
+    if (!pathSize[rtidx*WORKBENCH_SIZE+endIndex]) dd = INF;
     vec r2s(s.x - rtCo.x, s.y - rtCo.y);    // 机器人到起点向量
     vec s2e(e.x - s.x, e.y - s.y);          // 起点到终点的向量
     double rr = cntAngle(lsp, r2s) + cntAngle(r2s, s2e); // 任务所需转动角度和

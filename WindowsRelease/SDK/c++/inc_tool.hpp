@@ -1,6 +1,5 @@
 #ifndef TOOL_HPP
 #define TOOL_HPP
-#include <functional>
 #include "inc_codecraft2023.hpp"
 
 #define vec coordinate
@@ -8,30 +7,31 @@
 struct coordinate {
     double x, y;
     coordinate() {};
-    coordinate(double xx, double yy) {x = xx; y = yy;}
+    coordinate(double xx, double yy): x(xx), y(yy) {}
     void set(double xx, double yy) {x = xx; y = yy;}
 };
 
 // 将物理坐标网格化，将物理实际坐标映射到 100 * 100的网格中
 struct coordinate2 {
     int x, y;
-    coordinate2() {};
-    coordinate2(double xx, double yy): x(xx/0.5), y(yy/0.5) {}
+    coordinate2(): x(0), y(0) {}
     coordinate2(int xx, int yy): x(xx), y(yy) {}
-    bool operator==(const coordinate2& c) const {
+    coordinate2(coordinate c): x(c.x/0.5), y(c.y/0.5) {}    
+    inline bool operator==(const coordinate2& c) const {
         return (c.x == x && c.y == y);
     }
-    bool operator!=(const coordinate2& c) const {
+    inline bool operator!=(const coordinate2& c) const {
         return (c.x != x || c.y != y);
     }
-    void set(int xx, int yy) {x = xx; y = yy;}
+    inline void set(int xx, int yy) {x = xx; y = yy;}
+    inline operator coordinate() const { return coordinate(x*0.5+0.25, y*0.5+0.25); }
 };
 
 struct node {
     double distance;
     coordinate2 coor;
     node(double d, coordinate2 c): distance(d), coor(c) {}
-    bool operator>(const node& n) const {
+    inline bool operator>(const node& n) const {
         return distance > n.distance;
     }
 };

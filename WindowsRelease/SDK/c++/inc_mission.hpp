@@ -20,7 +20,7 @@ struct mission {
     mission(){};
     mission(int s, int e, int p) {set(s,e,p);}
     void set(int s, int e, int p);
-    void countValue(coordinate& rtCo, int proType, vec& lsp);
+    void countValue(int rtidx, int proType, vec& lsp);
 };
 
 #endif
