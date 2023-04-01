@@ -8,13 +8,13 @@ double dv1Max = 0.280491 * 50;       // 携带物品时线最大加速度
 double da0Max = 0.774646 * 50;       // 不携带物品时角最大加速度
 double da1Max = 0.401561 * 50;       // 携带物品时角最大加速度
 
-#define dwaN  20                  // 预测N帧
-#define dwaM 10                  // 速度空间采样点数
+#define dwaN  6                  // 预测N帧
+#define dwaM 15                  // 速度空间采样点数
 const double dt = 0.02;         // 帧长度
 
-double dwa_para1 = -0;         // 势能分量系数
-double dwa_para2 = -0;        // 目标角度系数
-double dwa_para3 = 1;        // 有效速度系数
+double dwa_para1 = -12.5;         // 势能分量系数
+double dwa_para2 = 10;        // 目标角度系数
+double dwa_para3 = 5;        // 有效速度系数
 
 
 double recordData[2*dwaM][2*dwaM][4];
@@ -29,11 +29,11 @@ double getEvaluate(int vidx, int aidx) {
     if (recordData[vidx][aidx][3] == INF) return -INF;
     double pe = recordData[vidx][aidx][0] / recordSum[0];
     if (isnan(pe)) pe = 0;
-    double heading = recordData[vidx][aidx][1] / recordSum[1];
+    double heading = 1 - recordData[vidx][aidx][1] / recordSum[1];
     if (isnan(heading)) heading = 0;
     double v = recordData[vidx][aidx][2] / recordSum[2];
     if (isnan(v)) v = 0;
-    double ans = dwa_para2 * heading + dwa_para3 * v;
+    double ans = dwa_para1 * pe + dwa_para2 * heading + dwa_para3 * v;
         // cerr << pe << ' ' << heading << ' ' << v << endl;
     return ans;
 }
@@ -47,7 +47,7 @@ void motionEvaluate(coordinate position,int rtIdx,vec speed, int vidx, int aidx)
     if (rbt.pd_id) {
         robotRadius = 0.53;     // the radius when carrying products
     }
-    robotRadius += 0.1;
+    robotRadius += 1;
 
     // check distence from robot to the wall
     if (fabs(position.x) <= robotRadius || fabs(position.x - 50.0) <= robotRadius) {
@@ -66,7 +66,6 @@ void motionEvaluate(coordinate position,int rtIdx,vec speed, int vidx, int aidx)
             pe += cntPontEnergy(otherRtIdx, position);
         }
     }
-    if (pe < 0.3) pe = 0;
     recordData[vidx][aidx][0] = pe;
     recordSum[0] += pe;
 
@@ -76,8 +75,9 @@ void motionEvaluate(coordinate position,int rtIdx,vec speed, int vidx, int aidx)
     recordData[vidx][aidx][1] = heading;
     recordSum[1] += heading;
 
-    // caculate V(speed), velocity to destination
-    double v = dotProduct(p2d, speed) / modulusOfvector(p2d);
+    // caculate V(speed)
+    vec l2p(rbt.location.x - position.x, rbt.location.y - position.y);
+    double v = dotProduct(l2p, speed) / modulusOfvector(l2p);
     recordData[vidx][aidx][2] = v;
     recordSum[2] += fabs(v);
 }
@@ -111,38 +111,31 @@ vec motionPredict(int rtIdx) {
     double tmpasp = curAsp, tmpLineSpeed = curLineSpeed;
 
     // 维护最佳路径
-    double score = -INF;
+    double score = -INF*2;
     vec best = vec(curLineSpeed,curAsp);
 
     // 根据设置的1帧后的速度和角速度，预测N帧后的位置和朝向，并维护最佳路径评估得分
     auto pathEvaluate = [&](int i,int j) {
         double w1 = (tmpasp + curAsp) / 2.0,v1 = (tmpLineSpeed + curLineSpeed) / 2.0;
+        double dda = tmpasp - curAsp, ddv = tmpLineSpeed - curLineSpeed;
+        double tmpToward = curToward;
+
         tmpy = ly, tmpx = lx;
 
         // 假设速度大小、角速度变化均匀，故第一帧按平均速度、角速度计算
-        double tmpToward = curToward + dt * w1;
-        if (fabs(w1) <= eps) {
-            tmpx += v1 * dt * cos(curToward);
-            tmpy += v1 * dt * sin(curToward);
-        } else {
-            tmpx += v1/w1 * (sin(curToward) - sin(tmpToward));
-            tmpy -= v1/w1 * (cos(curToward) - cos(tmpToward));
+        for(int k = 0; k < dwaN; k++) {
+            double nextToward = tmpToward + w1 * dt;
+            if (fabs(w1) <= eps) {
+                tmpx += v1 * dt * cos(tmpToward);
+                tmpy += v1 * dt * sin(tmpToward);
+            } else {
+                tmpx += v1/w1 * (sin(tmpToward) - sin(nextToward));
+                tmpy -= v1/w1 * (cos(tmpToward) - cos(nextToward));
+            }
+            w1 += dda, v1 += ddv, tmpToward = nextToward;
         }
 
-        // 假设后N-1帧速度大小、角速度不改变，计算位置和朝向
-        w1 = tmpasp, v1 = tmpLineSpeed;
-        if (fabs(w1) <= eps) {
-            double tmp = v1 * dt * (dwaN - 1);
-            tmpx += tmp * cos(tmpToward);
-            tmpy += tmp * sin(tmpToward);
-        } else {
-            double tmp = w1 * dt * (dwaN - 1);
-            tmpx += v1/w1 * (sin(tmpToward) - sin(tmpToward + tmp));
-            tmpy -= v1/w1 * (cos(tmpToward) - cos(tmpToward + tmp));
-            tmpToward += tmp;
-        }
         motionEvaluate(vec(tmpx,tmpy),rtIdx,vec(v1*cos(tmpToward),v1*sin(tmpToward)),i,j);
-        
     };
 
     // 总采样点数 : 4M^2 + 1

@@ -23,10 +23,6 @@ double para1 = 950000;
 double para2 = 7;
 double para4 = 0.35;
 
-// int dwaN = 20;
-// int dwaM = 20;
-// const double dt = 1.0/50;
-
 map<int, std::vector<int>> type2BuyIndex;               // 根据产品类型寻找收购方下标
 pair<pair<int,int>,int> profitAndTime[WORKBENCH_SIZE];  // 记录收购价、购入价以及生产用时
 
