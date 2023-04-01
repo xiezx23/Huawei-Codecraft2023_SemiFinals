@@ -20,17 +20,25 @@ void ori_solution() {
         }
     }
     // 指令规划
-    for (int rtIdx = 0; rtIdx < ROBOT_SIZE; ++rtIdx) {
+    // ofstream fout("log.txt", ios_base::app);
+    for (int rtIdx = 0; rtIdx < ROBOT_SIZE; ++rtIdx) {        
         if (rt[rtIdx].holdTime) --rt[rtIdx].holdTime;
         rt[rtIdx].cmd.clean(); // 清除之前指令设置
         rt[rtIdx].checkDest(); // 检查是否到达目的地
         rt[rtIdx].checkTask(); // 任务执行->运动指令
-        vec motion = motionPredict(rtIdx);
-        rt[rtIdx].cmd.forward = motion.x;
-        rt[rtIdx].cmd.rotate = motion.y;
+        
+        if (rt[rtIdx].taskQueue.size()) {
+            int wbIdx = rt[rtIdx].taskQueue.front().destId;
+            // fout << "do Task: Frame" << frameID << ":(robot" << rtIdx << ", " << "work: " << wbIdx << ")" << rt[rtIdx].location.x << "," << rt[rtIdx].location.y << " -> " << rt[rtIdx].taskQueue.front().destCo.x << "," << rt[rtIdx].taskQueue.front().destCo.y << endl << endl;
+        }        
+
+        // vec motion = motionPredict(rtIdx);
+        // rt[rtIdx].cmd.forward = motion.x;
+        // rt[rtIdx].cmd.rotate = motion.y;
     }
+    // fout.close();
     // 碰撞避免
-    // collitionAvoidance();
+    collitionAvoidance();
     // ori_collitionAvoidance(); 
     return;
 }
