@@ -1,7 +1,7 @@
 /*** 
  * @Author: Xzx
  * @Date: 2023-03-15 00:10:42
- * @LastEditTime: 2023-03-25 23:50:03
+ * @LastEditTime: 2023-04-01 19:23:15
  * @LastEditors: Xzh
  * @Description: 
  */
@@ -134,6 +134,7 @@ void init() {
 int main() {
     readPlat();
     init();
+    pathdect_init();
     puts("OK");
     fflush(stdout);
     while (scanf("%d", &frameID) != EOF) {
