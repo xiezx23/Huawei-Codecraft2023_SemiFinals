@@ -13,6 +13,7 @@
 #include "inc_dwa.hpp"
 #include "inc_shorestpath.hpp"
 #include "inc_threadpool.hpp"
+#include "inc_pathdetect.hpp"
 using namespace std;
 
 extern int K;                               // 工作台数
