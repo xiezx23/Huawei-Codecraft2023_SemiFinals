@@ -118,13 +118,13 @@ void pathdect_init() {
         }
     }
 
-    for (int i = 0; i < MAP_SIZE; i++) {
-        for (int j = 0; j < MAP_SIZE; j++) {
-            cerr<<resolve_plat[i + 1][j + 1];
-        }
-        cerr<<endl;
-    }
-    cout<<1;
+    // for (int i = 0; i < MAP_SIZE; i++) {
+    //     for (int j = 0; j < MAP_SIZE; j++) {
+    //         cerr<<resolve_plat[i + 1][j + 1];
+    //     }
+    //     cerr<<endl;
+    // }
+    // cout<<1;
 
 
 }

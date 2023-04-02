@@ -39,10 +39,7 @@ void init() {
     
     for(int i = 0; i < MAP_SIZE; ++i){
         for(int j = 0; j < MAP_SIZE; ++j){
-            if (plat[i][j] == '#') {
-                obstacle[j][MAP_SIZE-i-1] = true;
-            }
-            else if(isdigit(plat[i][j])) {
+            if(isdigit(plat[i][j])) {
                 wb[K].type = plat[i][j] - '0';
                 workbenchLoc[coordinate2(j, MAP_SIZE-i-1)] = K; 
                 wb[K++].reachable = true;                
@@ -56,6 +53,7 @@ void init() {
     for (int i = 0; i < ROBOT_SIZE; ++i) {
         rt[i].rtIdx = i;
     }
+    pathdect_init();
     initShorestPath(robotLoc);
     // 记录每种物品的收益及生产周期
     profitAndTime[0] = make_pair(make_pair(0,0), INF);
@@ -133,8 +131,7 @@ void init() {
 
 int main() {
     readPlat();
-    init();
-    pathdect_init();
+    init();    
     puts("OK");
     fflush(stdout);
     while (scanf("%d", &frameID) != EOF) {

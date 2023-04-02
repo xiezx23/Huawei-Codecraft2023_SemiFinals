@@ -6,8 +6,6 @@ struct coordinate2_hash {
     size_t operator()(const coordinate2& c) const;
 };
 
-// 记录地图中的障碍物
-extern bool obstacle[MAP_SIZE][MAP_SIZE];
 // 所有工作台的网格化坐标
 extern std::unordered_map<coordinate2, int, coordinate2_hash> workbenchLoc;
 // 机器人i到工作台k的最短路径存储在数组 shorestPath[i*WORKBENCH_SIZE+k]中
@@ -17,11 +15,12 @@ extern std::unordered_map<coordinate2, int, coordinate2_hash> workbenchLoc;
 extern coordinate2 shorestPath[ROBOT_SIZE*WORKBENCH_SIZE][MAP_SIZE*MAP_SIZE];
 extern double pathLength[ROBOT_SIZE*WORKBENCH_SIZE];
 extern int pathSize[ROBOT_SIZE*WORKBENCH_SIZE];
+extern const int inf;
 
-// 计算从rtidx号机器人到所有工作台的最短路
-void dijkstra(int rtidx, const coordinate2& src);
-// 计算从rtidx号机器人到指定工作台的最短路
-void dijkstra(int rtidx, const coordinate2& src, int wbidx, coordinate2 dest);
+// 计算从rtidx号机器人到所有工作台的最短路（用于寻找到生产工作台的最短路，因此不携带物品）
+void dijkstra(int rtidx, coordinate2 src);
+// 计算从rtidx号机器人到指定工作台的最短路（用于寻找到消耗工作台的最短路，携带了物品）
+void dijkstra(int rtidx, coordinate2 src, int wbidx, coordinate2 dest);
 // 根据最短路径前驱表更新最短路
 void updatePath(int rtidx, const coordinate2& src, int wbidx, coordinate2& dest, const std::vector<std::vector<coordinate2>>& precessor, double dis);
 // 预处理时，计算从机器人到所有工作台的最短路
