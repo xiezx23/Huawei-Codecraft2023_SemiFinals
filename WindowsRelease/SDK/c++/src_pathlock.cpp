@@ -127,6 +127,7 @@ void pathlock_init() {
         }
     }
 
+<<<<<<< HEAD:WindowsRelease/SDK/c++/src_pathlock.cpp
     // 初始化锁状态
     lockStatus[0] = 0x3f3f3f;
     for (int i = 1; i < lockCnt; i++) lockStatus[i] = 1;
@@ -149,6 +150,15 @@ void printMap() {
     }
     cerr<<endl;
 }
+=======
+    // for (int i = 0; i < MAP_SIZE; i++) {
+    //     for (int j = 0; j < MAP_SIZE; j++) {
+    //         cerr<<resolve_plat[i + 1][j + 1];
+    //     }
+    //     cerr<<endl;
+    // }
+    // cout<<1;
+>>>>>>> ab4573e6eb7005a7f6c006361cc66609228e0afa:WindowsRelease/SDK/c++/src_pathdetect.cpp
 
 // 释放锁
 void pathlock_release(int rtidx, int y, int x) {
