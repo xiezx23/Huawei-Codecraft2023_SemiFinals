@@ -13,8 +13,6 @@ void mission::countValue(int rtidx, int proType, vec& lsp) {
     coordinate e = wb[endIndex].location;
     // double dd = dis(rtCo, s) + dis(s, e);   // 机器人到起点再到终点的距离    
     double dd = pathLength[rtidx*WORKBENCH_SIZE+startIndex] + pathLength[rtidx*WORKBENCH_SIZE+endIndex];
-    if (!pathSize[rtidx*WORKBENCH_SIZE+startIndex]) dd = INF;
-    if (!pathSize[rtidx*WORKBENCH_SIZE+endIndex]) dd = INF;
     vec r2s(s.x - rtCo.x, s.y - rtCo.y);    // 机器人到起点向量
     vec s2e(e.x - s.x, e.y - s.y);          // 起点到终点的向量
     double rr = cntAngle(lsp, r2s) + cntAngle(r2s, s2e); // 任务所需转动角度和
