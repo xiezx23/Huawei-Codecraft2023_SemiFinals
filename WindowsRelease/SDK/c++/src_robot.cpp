@@ -106,9 +106,9 @@ void robot::checkTask() {
 
 // 速度过低时用朝向来为其赋一个明确速度
 void robot::checkSpeed() {
-    if (fabs(lsp.x) < 0.01 && fabs(lsp.y) < 0.01) {
-        lsp.x += 1*cos(toward);
-        lsp.y += 1*sin(toward);
+    if (fabs(lsp.x) < 0.001 && fabs(lsp.y) < 0.001) {
+        lsp.x += 0.01*cos(toward);
+        lsp.y += 0.01*sin(toward);
     }
 }
 
