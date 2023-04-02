@@ -1,7 +1,7 @@
 /*** 
  * @Author: Xzx
  * @Date: 2023-03-15 00:10:42
- * @LastEditTime: 2023-04-01 19:23:15
+ * @LastEditTime: 2023-04-03 01:21:34
  * @LastEditors: Xzh
  * @Description: 
  */
@@ -53,7 +53,6 @@ void init() {
     for (int i = 0; i < ROBOT_SIZE; ++i) {
         rt[i].rtIdx = i;
     }
-    pathdect_init();
     initShorestPath(robotLoc);
     // 记录每种物品的收益及生产周期
     profitAndTime[0] = make_pair(make_pair(0,0), INF);
@@ -131,7 +130,9 @@ void init() {
 
 int main() {
     readPlat();
-    init();    
+    init();
+    pathlock_init();
+    printMap();
     puts("OK");
     fflush(stdout);
     while (scanf("%d", &frameID) != EOF) {
