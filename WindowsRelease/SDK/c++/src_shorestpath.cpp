@@ -18,8 +18,37 @@ int pathSize[ROBOT_SIZE*WORKBENCH_SIZE];
 double dis1, dis2;
 const int inf = -1;
 
-// 计算从rtidx号机器人到所有工作台的最短路（用于寻找到生产工作台的最短路，因此不携带物品）
-void dijkstra(int rtidx, coordinate2 src) {
+// 加入位置权重
+double posiWeight[MAP_SIZE][MAP_SIZE];
+// 对于普通的点，其权重为1，一个墙壁点会对其上下左右的点增加权重2，对斜对角点增加权重1.4
+void initWeight() {
+    for (int i = 0; i < MAP_SIZE; ++i) {
+        for (int j = 0; j < MAP_SIZE; ++j) {
+            posiWeight[i][j] = 1.0;
+        }
+    }
+    for (int i = 1; i < MAP_SIZE - 1; ++i) {
+        for (int j = 1; j < MAP_SIZE - 1; ++j) {
+            if (obstacle[i][j]) {
+                posiWeight[i - 1][j] += 10.0; posiWeight[i + 1][j] += 10.0;
+                posiWeight[i][j - 1] += 10.0; posiWeight[i][j + 1] += 10.0;
+                posiWeight[i - 1][j + 1] += 7.0; posiWeight[i + 1][j + 1] += 7.0;
+                posiWeight[i - 1][j - 1] += 7.0; posiWeight[i + 1][j - 1] += 7.0;
+                for (int x = max(0, i - 2); x < min(100, i + 3); ++x) {
+                    if (j + 2 < 100) posiWeight[x][j + 2] += 1; 
+                    if (j - 2 >= 0) posiWeight[x][j - 2] += 1; 
+                }
+                for (int y = j - 1; y < j + 2; ++y) {
+                    if (i + 2 < 100) posiWeight[i + 2][y] += 1; 
+                    if (i - 2 >= 0) posiWeight[i - 2][y] += 1; 
+                }
+            }
+        }
+    }
+}
+
+// 计算从rtidx号机器人到所有工作台的最短路
+void dijkstra(int rtidx, const coordinate2& src) {
     // 当前位置已搜索过
     if (pathSize[rtidx*WORKBENCH_SIZE] != inf) return;
 
@@ -45,7 +74,7 @@ void dijkstra(int rtidx, coordinate2 src) {
                 if (visited[i][j])  continue;
                 precessor[i][j].set(x, y);
                 coordinate2 dest(i, j);
-                double d = (abs(x-i)+abs(y-j)==1) ? dis+dis1: dis+dis2;
+                double d = (abs(x-i)+abs(y-j)==1) ? dis+dis1*posiWeight[i][j]: dis+dis2*posiWeight[i][j];
                 if (workbenchLoc.count(dest)) {
                     // 当前坐标有工作台，更新最短路
                     ++findk;
@@ -89,7 +118,7 @@ void dijkstra(int rtidx, coordinate2 src, int wbidx, coordinate2 dest) {
                 if (visited[i][j])  continue;
                 precessor[i][j].set(x, y);
                 coordinate2 c(i, j);
-                double d = (abs(x-i)+abs(y-j)==1) ? dis+dis1: dis+dis2;
+                double d = (abs(x-i)+abs(y-j)==1) ? dis+dis1*posiWeight[i][j]: dis+dis2*posiWeight[i][j];
                 if (c == dest) {
                     // 找到工作台
                     updatePath(rtidx, src, wbidx, dest, precessor, d);

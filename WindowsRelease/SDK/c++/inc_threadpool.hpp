@@ -79,4 +79,5 @@ public:
     void exit();
 };
 
+extern threadPool* tp;     // 线程池实例
 #endif

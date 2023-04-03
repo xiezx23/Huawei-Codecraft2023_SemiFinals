@@ -17,6 +17,9 @@ extern double pathLength[ROBOT_SIZE*WORKBENCH_SIZE];
 extern int pathSize[ROBOT_SIZE*WORKBENCH_SIZE];
 extern const int inf;
 
+// 初始化位置权重
+extern void initWeight();
+
 // 计算从rtidx号机器人到所有工作台的最短路（用于寻找到生产工作台的最短路，因此不携带物品）
 void dijkstra(int rtidx, coordinate2 src);
 // 计算从rtidx号机器人到指定工作台的最短路（用于寻找到消耗工作台的最短路，携带了物品）

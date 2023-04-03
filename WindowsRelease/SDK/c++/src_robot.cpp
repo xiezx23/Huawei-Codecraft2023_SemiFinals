@@ -44,8 +44,9 @@ void robot::checkDest() {
     }
     if (!taskQueue.empty()) {
         curTask = taskQueue.front();
+        double radium = pd_id ? 0.53 : 0.48;
         if (!curTask.buy && !curTask.sell) {
-            if (dis(curTask.destCo, location) < 0.4) {
+            if (dis(curTask.destCo, location) < radium + 0.1) {
                 taskQueue.pop();
             }            
         }
@@ -84,7 +85,7 @@ void robot::checkTask() {
             #ifdef ESTIMATE
             if ((wb[selected.startIndex].pstatus || selected.estFrame >= wb[selected.startIndex].rtime) && (selected.estFrame + frameID < 9000)) {
             #else
-            if (wb[selected.startIndex].pstatus && (selected.estFrame + frameID < 9000)) {
+            if (wb[selected.startIndex].pstatus && (selected.estFrame + frameID < 15000)) {
             #endif
                 // ofstream fout("log.txt", ios_base::app);
                 // fout << "new Mission: Frame" << frameID << ":(robot" << rtIdx << ") " << selected.startIndex << "->" << selected.endIndex << endl << endl;
