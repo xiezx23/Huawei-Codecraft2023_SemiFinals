@@ -1,7 +1,7 @@
 /*** 
  * @Author: Xzx
  * @Date: 2023-03-15 00:10:42
- * @LastEditTime: 2023-04-01 19:23:15
+ * @LastEditTime: 2023-04-03 01:21:34
  * @LastEditors: Xzh
  * @Description: 
  */
@@ -43,10 +43,7 @@ void init() {
     
     for(int i = 0; i < MAP_SIZE; ++i){
         for(int j = 0; j < MAP_SIZE; ++j){
-            if (plat[i][j] == '#') {
-                obstacle[j][MAP_SIZE-i-1] = true;
-            }
-            else if(isdigit(plat[i][j])) {
+            if(isdigit(plat[i][j])) {
                 wb[K].type = plat[i][j] - '0';
                 workbenchLoc[coordinate2(j, MAP_SIZE-i-1)] = K; 
                 wb[K++].reachable = true;                
@@ -138,8 +135,9 @@ void init() {
 int main() {
     readPlat();
     init();
-    // pathdect_init();
     initWeight();
+    pathlock_init();
+    printMap();
     puts("OK");
     fflush(stdout);
     while (scanf("%d", &frameID) != EOF) {

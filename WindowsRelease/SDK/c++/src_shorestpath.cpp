@@ -5,8 +5,6 @@ size_t coordinate2_hash::operator()(const coordinate2& c) const {
     return int_hash(c.x)^int_hash(c.y);
 }
 
-// 记录地图中的障碍物
-bool obstacle[MAP_SIZE][MAP_SIZE];
 // 所有工作台的网格化坐标
 unordered_map<coordinate2, int, coordinate2_hash> workbenchLoc;
 // 机器人i到工作台k的最短路径存储在数组 shorestPath[i*WORKBENCH_SIZE+k]中
@@ -18,6 +16,7 @@ double pathLength[ROBOT_SIZE*WORKBENCH_SIZE];
 int pathSize[ROBOT_SIZE*WORKBENCH_SIZE];
 // 水平或直接相邻的距离及对角相邻的距离
 double dis1, dis2;
+const int inf = -1;
 
 // 加入位置权重
 double posiWeight[MAP_SIZE][MAP_SIZE];
@@ -51,7 +50,7 @@ void initWeight() {
 // 计算从rtidx号机器人到所有工作台的最短路
 void dijkstra(int rtidx, const coordinate2& src) {
     // 当前位置已搜索过
-    if (pathSize[rtidx*WORKBENCH_SIZE]) return;
+    if (pathSize[rtidx*WORKBENCH_SIZE] != inf) return;
 
     vector<vector<coordinate2>> precessor(MAP_SIZE, vector<coordinate2>(MAP_SIZE));     // 存储最短路上的前驱
     vector<vector<bool>> visited(MAP_SIZE, vector<bool>(MAP_SIZE, false));              // 标识位
@@ -70,7 +69,8 @@ void dijkstra(int rtidx, const coordinate2& src) {
             if (i < 0 || i >= MAP_SIZE) continue;;
             for (int j = y-1; j <= y+1; ++j) {
                 if (j < 0 || j >= MAP_SIZE) continue;
-                if (obstacle[i][j]) continue;
+                if (resolve_plat[MAP_SIZE-j][i+1] == '#') continue;
+                if (resolve_plat[MAP_SIZE-j][i+1] == '1') continue;
                 if (visited[i][j])  continue;
                 precessor[i][j].set(x, y);
                 coordinate2 dest(i, j);
@@ -91,10 +91,10 @@ void dijkstra(int rtidx, const coordinate2& src) {
     }
 }
 
-// 计算从rtidx号机器人到指定工作台的最短路
-void dijkstra(int rtidx, const coordinate2& src, int wbidx, coordinate2 dest) {
+// 计算从rtidx号机器人到指定工作台的最短路（用于寻找到消耗工作台的最短路，携带了物品）
+void dijkstra(int rtidx, coordinate2 src, int wbidx, coordinate2 dest) {
     // 当前位置已搜索过
-    if (pathSize[rtidx*WORKBENCH_SIZE+wbidx]) return;
+    if (pathSize[rtidx*WORKBENCH_SIZE+wbidx] != inf) return;
 
     vector<vector<coordinate2>> precessor(MAP_SIZE, vector<coordinate2>(MAP_SIZE));     // 存储最短路上的前驱
     vector<vector<bool>> visited(MAP_SIZE, vector<bool>(MAP_SIZE, false));              // 标识位
@@ -112,7 +112,9 @@ void dijkstra(int rtidx, const coordinate2& src, int wbidx, coordinate2 dest) {
             if (i < 0 || i >= MAP_SIZE) continue;;
             for (int j = y-1; j <= y+1; ++j) {
                 if (j < 0 || j >= MAP_SIZE) continue;
-                if (obstacle[i][j]) continue;
+                if (resolve_plat[MAP_SIZE-j][i+1] == '#') continue;
+                if (resolve_plat[MAP_SIZE-j][i+1] == '1') continue;
+                if (isalpha(resolve_plat[MAP_SIZE-j][i+1] )) continue;
                 if (visited[i][j])  continue;
                 precessor[i][j].set(x, y);
                 coordinate2 c(i, j);
@@ -143,6 +145,8 @@ void updatePath(int rtidx, const coordinate2& src, int wbidx, coordinate2& dest,
 
 // 计算从机器人初始位置到达所有工作台的最短路
 void initShorestPath(const vector<coordinate2>& oricoordinate) {
+    // memset(pathLength, inf, sizeof(pathLength));
+    memset(pathSize, inf, sizeof(pathSize));
     dis1 = 0.5;
     dis2 = sqrt(2*dis1*dis1);
     for (int i = 0; i < ROBOT_SIZE; ++i) {
@@ -194,7 +198,7 @@ void compress(int rtidx, int wbidx, bool buy, bool sell) {
     while (s.size() > 1) {
         coordinate c = coordinate(s.top());
         r.taskQueue.push(task(c, wbidx, 0, 0));
-        // fout << c.x << ", " << c.y << " -> ";  
+        // fout << c.x << ", " << c.y << "(" << s.top().x << ", " << s.top().y << ") -> ";  
         s.pop();
     }
     r.taskQueue.push(task(wb[wbidx].location, wbidx, buy, sell));
@@ -202,7 +206,8 @@ void compress(int rtidx, int wbidx, bool buy, bool sell) {
     // fout.close();
 
     // 认为机器人位置发生改变，原最短路无效
-    memset(pathSize+rtidx*WORKBENCH_SIZE, 0, sizeof(int)*WORKBENCH_SIZE);
+    // memset(pathLength+rtidx*WORKBENCH_SIZE, inf, sizeof(double)*WORKBENCH_SIZE);
+    memset(pathSize+rtidx*WORKBENCH_SIZE, inf, sizeof(int)*WORKBENCH_SIZE);
 }
 
 // 比较方向

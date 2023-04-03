@@ -6,8 +6,6 @@ struct coordinate2_hash {
     size_t operator()(const coordinate2& c) const;
 };
 
-// 记录地图中的障碍物
-extern bool obstacle[MAP_SIZE][MAP_SIZE];
 // 所有工作台的网格化坐标
 extern std::unordered_map<coordinate2, int, coordinate2_hash> workbenchLoc;
 // 机器人i到工作台k的最短路径存储在数组 shorestPath[i*WORKBENCH_SIZE+k]中
@@ -17,6 +15,7 @@ extern std::unordered_map<coordinate2, int, coordinate2_hash> workbenchLoc;
 extern coordinate2 shorestPath[ROBOT_SIZE*WORKBENCH_SIZE][MAP_SIZE*MAP_SIZE];
 extern double pathLength[ROBOT_SIZE*WORKBENCH_SIZE];
 extern int pathSize[ROBOT_SIZE*WORKBENCH_SIZE];
+extern const int inf;
 
 // 初始化位置权重
 extern void initWeight();
