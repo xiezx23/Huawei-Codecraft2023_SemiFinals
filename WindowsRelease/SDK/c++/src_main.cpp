@@ -171,6 +171,7 @@ int main() {
     dataLog.printLog();
     # endif
 
+    tp->exit();
     return 0;
 }
 
