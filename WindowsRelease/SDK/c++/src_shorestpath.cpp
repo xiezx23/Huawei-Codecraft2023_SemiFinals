@@ -31,10 +31,18 @@ void initWeight() {
     for (int i = 1; i < MAP_SIZE - 1; ++i) {
         for (int j = 1; j < MAP_SIZE - 1; ++j) {
             if (obstacle[i][j]) {
-                posiWeight[i - 1][j] += 4.0; posiWeight[i + 1][j] += 4.0;
-                posiWeight[i][j - 1] += 4.0; posiWeight[i][j + 1] += 4.0;
-                posiWeight[i - 1][j + 1] += 3; posiWeight[i + 1][j + 1] += 3;
-                posiWeight[i - 1][j - 1] += 3; posiWeight[i + 1][j - 1] += 3;
+                posiWeight[i - 1][j] += 10.0; posiWeight[i + 1][j] += 10.0;
+                posiWeight[i][j - 1] += 10.0; posiWeight[i][j + 1] += 10.0;
+                posiWeight[i - 1][j + 1] += 7.0; posiWeight[i + 1][j + 1] += 7.0;
+                posiWeight[i - 1][j - 1] += 7.0; posiWeight[i + 1][j - 1] += 7.0;
+                for (int x = max(0, i - 2); x < min(100, i + 3); ++x) {
+                    if (j + 2 < 100) posiWeight[x][j + 2] += 1; 
+                    if (j - 2 >= 0) posiWeight[x][j - 2] += 1; 
+                }
+                for (int y = j - 1; y < j + 2; ++y) {
+                    if (i + 2 < 100) posiWeight[i + 2][y] += 1; 
+                    if (i - 2 >= 0) posiWeight[i - 2][y] += 1; 
+                }
             }
         }
     }

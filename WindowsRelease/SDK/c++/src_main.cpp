@@ -102,43 +102,43 @@ void init() {
             break;
         }
     }
-    // 预初始化网络流
-    curFlow.init();
+    // // 预初始化网络流
+    // curFlow.init();
     
-    // 特判
-    if (K == 43) {
-        // cerr << "map1" << endl;
-        para1 = 950000;
-        para2 = 6;
-        para4 = 1.5;
-    }
-    else if (K == 25) {
-        // cerr << "map2" << endl;
-        curFlow.para1 = -390000;
-        curFlow.para2 = 40;
-    }
-    else if (K == 50) {
-        // cerr << "map3" << endl;
-        para1 = 950000;
-        para2 = 20;
-        para4 = 0.1;
-    }
-    else if (K == 18) {
-        // cerr << "map4" << endl;
-        para1 = 700000;
-        para2 = 7;
-        para4 = 0.2;
-        curFlow.para1 = -390000;
-        curFlow.para2 = 45;
-        curFlow.para4 = 0.4;
-    }
+    // // 特判
+    // if (K == 43) {
+    //     // cerr << "map1" << endl;
+    //     para1 = 950000;
+    //     para2 = 6;
+    //     para4 = 1.5;
+    // }
+    // else if (K == 25) {
+    //     // cerr << "map2" << endl;
+    //     curFlow.para1 = -390000;
+    //     curFlow.para2 = 40;
+    // }
+    // else if (K == 50) {
+    //     // cerr << "map3" << endl;
+    //     para1 = 950000;
+    //     para2 = 20;
+    //     para4 = 0.1;
+    // }
+    // else if (K == 18) {
+    //     // cerr << "map4" << endl;
+    //     para1 = 700000;
+    //     para2 = 7;
+    //     para4 = 0.2;
+    //     curFlow.para1 = -390000;
+    //     curFlow.para2 = 45;
+    //     curFlow.para4 = 0.4;
+    // }
 }
 
 
 int main() {
     readPlat();
     init();
-    pathdect_init();
+    // pathdect_init();
     initWeight();
     puts("OK");
     fflush(stdout);
