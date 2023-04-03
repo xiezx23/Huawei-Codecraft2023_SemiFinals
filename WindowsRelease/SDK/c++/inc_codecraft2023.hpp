@@ -20,7 +20,7 @@ extern int K;                               // 工作台数
 extern int N;                               // 机器人数
 extern int frameID;                         // 当前帧
 extern int curMoney;                        // 当前金钱
-extern char plat[MAP_SIZE][MAP_SIZE];       // 输入地图
+extern char plat[MAP_SIZE][MAP_SIZE + 2];   // 输入地图
 extern int totalSellNum[WORKBENCH_SIZE];    // 物品的出售次数
 extern const double PI;                     // 圆周率
 
