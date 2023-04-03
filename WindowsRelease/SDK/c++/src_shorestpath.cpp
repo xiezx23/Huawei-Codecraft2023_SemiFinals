@@ -1,8 +1,7 @@
 #include "inc_shorestpath.hpp"
 
 size_t coordinate2_hash::operator()(const coordinate2& c) const {
-    std::hash<int> int_hash;
-    return int_hash(c.x)^int_hash(c.y);
+    return (c.x<<8) | c.y;
 }
 
 // 所有工作台的网格化坐标
@@ -54,7 +53,7 @@ void dijkstra(int rtidx, coordinate2 src) {
 
     vector<vector<coordinate2>> precessor(MAP_SIZE, vector<coordinate2>(MAP_SIZE));     // 存储最短路上的前驱
     vector<vector<bool>> visited(MAP_SIZE, vector<bool>(MAP_SIZE, false));              // 标识位
-    priority_queue<node, vector<node>, greater<node>> q;                    
+    priority_queue<node, vector<node>, greater<node>> q;
 
     q.push(node(0, src));
     visited[src.x][src.y] = true;
@@ -66,7 +65,7 @@ void dijkstra(int rtidx, coordinate2 src) {
         q.pop();
 
         for (int i = x-1; i <= x+1; ++i) {
-            if (i < 0 || i >= MAP_SIZE) continue;;
+            if (i < 0 || i >= MAP_SIZE) continue;
             for (int j = y-1; j <= y+1; ++j) {
                 if (j < 0 || j >= MAP_SIZE) continue;
                 if (resolve_plat[MAP_SIZE-j][i+1] == '#') continue;
@@ -74,7 +73,8 @@ void dijkstra(int rtidx, coordinate2 src) {
                 if (visited[i][j])  continue;
                 precessor[i][j].set(x, y);
                 coordinate2 dest(i, j);
-                double d = (abs(x-i)+abs(y-j)==1) ? dis+dis1*posiWeight[i][j]: dis+dis2*posiWeight[i][j];
+                double d = (abs(x-i)+abs(y-j)==1) ? dis+dis1*posiWeight[MAP_SIZE-j-1][i]: dis+dis2*posiWeight[MAP_SIZE-j-1][i];
+                // double d = (abs(x-i)+abs(y-j)==1) ? dis+dis1: dis+dis2;
                 if (workbenchLoc.count(dest)) {
                     // 当前坐标有工作台，更新最短路
                     ++findk;
@@ -118,7 +118,8 @@ void dijkstra(int rtidx, coordinate2 src, int wbidx, coordinate2 dest) {
                 if (visited[i][j])  continue;
                 precessor[i][j].set(x, y);
                 coordinate2 c(i, j);
-                double d = (abs(x-i)+abs(y-j)==1) ? dis+dis1*posiWeight[i][j]: dis+dis2*posiWeight[i][j];
+                double d = (abs(x-i)+abs(y-j)==1) ? dis+dis1*posiWeight[MAP_SIZE-j-1][i]: dis+dis2*posiWeight[MAP_SIZE-j-1][i];
+                // double d = (abs(x-i)+abs(y-j)==1) ? dis+dis1: dis+dis2;
                 if (c == dest) {
                     // 找到工作台
                     updatePath(rtidx, src, wbidx, dest, precessor, d);

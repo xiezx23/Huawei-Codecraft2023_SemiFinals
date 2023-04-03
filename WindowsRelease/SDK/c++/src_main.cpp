@@ -134,8 +134,8 @@ void init() {
 
 int main() {
     readPlat();
-    init();
     initWeight();
+    init();
     pathlock_init();
     printMap();
     puts("OK");
