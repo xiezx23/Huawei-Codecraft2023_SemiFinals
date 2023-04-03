@@ -14,7 +14,7 @@ coordinate2 shorestPath[ROBOT_SIZE*WORKBENCH_SIZE][MAP_SIZE*MAP_SIZE];
 double pathLength[ROBOT_SIZE*WORKBENCH_SIZE];
 int pathSize[ROBOT_SIZE*WORKBENCH_SIZE];
 // 水平或直接相邻的距离及对角相邻的距离
-double dis1, dis2;
+double dis1 = 1, dis2 = sqrt(2);
 const int inf = -1;
 
 // 加入位置权重
@@ -26,6 +26,10 @@ void initWeight() {
             posiWeight[i][j] = 1.0;
         }
     }
+    // for (int i = 0; i < MAP_SIZE; ++i) {
+    //     posiWeight[i][0] = posiWeight[i][MAP_SIZE-1] = 10.0;
+    //     posiWeight[0][i] = posiWeight[MAP_SIZE-1][i] = 10.0;
+    // }
     for (int i = 1; i < MAP_SIZE - 1; ++i) {
         for (int j = 1; j < MAP_SIZE - 1; ++j) {
             if (plat[i][j] == '#') {
@@ -33,14 +37,14 @@ void initWeight() {
                 posiWeight[i][j - 1] += 10.0; posiWeight[i][j + 1] += 10.0;
                 posiWeight[i - 1][j + 1] += 7.0; posiWeight[i + 1][j + 1] += 7.0;
                 posiWeight[i - 1][j - 1] += 7.0; posiWeight[i + 1][j - 1] += 7.0;
-                for (int x = max(0, i - 2); x < min(100, i + 3); ++x) {
-                    if (j + 2 < 100) posiWeight[x][j + 2] += 1; 
-                    if (j - 2 >= 0) posiWeight[x][j - 2] += 1; 
-                }
-                for (int y = j - 1; y < j + 2; ++y) {
-                    if (i + 2 < 100) posiWeight[i + 2][y] += 1; 
-                    if (i - 2 >= 0) posiWeight[i - 2][y] += 1; 
-                }
+                // for (int x = max(0, i - 2); x < min(100, i + 3); ++x) {
+                //     if (j + 2 < 100) posiWeight[x][j + 2] += 1; 
+                //     if (j - 2 >= 0) posiWeight[x][j - 2] += 1; 
+                // }
+                // for (int y = j - 1; y < j + 2; ++y) {
+                //     if (i + 2 < 100) posiWeight[i + 2][y] += 1; 
+                //     if (i - 2 >= 0) posiWeight[i - 2][y] += 1; 
+                // }
             }
         }
     }
@@ -148,8 +152,6 @@ void updatePath(int rtidx, const coordinate2& src, int wbidx, coordinate2& dest,
 void initShorestPath(const vector<coordinate2>& oricoordinate) {
     // memset(pathLength, inf, sizeof(pathLength));
     memset(pathSize, inf, sizeof(pathSize));
-    dis1 = 0.5;
-    dis2 = sqrt(2*dis1*dis1);
     for (int i = 0; i < ROBOT_SIZE; ++i) {
         dijkstra(i, oricoordinate[i]);
     }
