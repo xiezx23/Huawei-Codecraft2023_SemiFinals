@@ -5,7 +5,7 @@
 extern int lockID[MAP_SIZE][MAP_SIZE];         //该格子对应的锁ID
 extern int lockCnt;                            //锁的数量
 extern int lockStatus[MAP_SIZE * MAP_SIZE];    //锁的状态
-
+extern char resolve_plat[MAP_SIZE + 2][MAP_SIZE + 2];
 
 // 预处理地图以及对应所变量
 void pathlock_init();
