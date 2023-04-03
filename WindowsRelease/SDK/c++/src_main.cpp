@@ -6,7 +6,7 @@
  * @Description: 
  */
 #include "inc_codecraft2023.hpp"
-#pragma GCC optimize(2)
+// #pragma GCC optimize(2)
 using namespace std;
 
 int K;                              // 工作台数
