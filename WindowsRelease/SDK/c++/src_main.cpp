@@ -6,6 +6,7 @@
  * @Description: 
  */
 #include "inc_codecraft2023.hpp"
+#pragma GCC optimize(2)
 using namespace std;
 
 int K;                              // 工作台数
@@ -18,6 +19,8 @@ char plat[MAP_SIZE][MAP_SIZE];      // 输入地图
 mcmf curFlow;                       // 网络流实例
 logInfo dataLog;                    // 日志实例
 int totalSellNum[WORKBENCH_SIZE];   // 物品的出售次数
+
+threadPool* tp;     // 线程池
 
 double para1 = 950000;
 double para2 = 7;
@@ -32,6 +35,7 @@ pair<pair<int,int>,int> profitAndTime[WORKBENCH_SIZE];  // 记录收购价、购
 
 
 void init() {    
+    tp = new threadPool(4);
     // 读取地图信息
     // 记录机器人的初始坐标
     vector<coordinate2> robotLoc;
@@ -135,6 +139,7 @@ int main() {
     readPlat();
     init();
     pathdect_init();
+    initWeight();
     puts("OK");
     fflush(stdout);
     while (scanf("%d", &frameID) != EOF) {

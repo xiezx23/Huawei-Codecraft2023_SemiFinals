@@ -41,15 +41,15 @@ void* threadPool::threadWork(void *arg) {
             std::unique_lock<std::mutex> lock(tpPtr->tCond_mutex);
             // 任务队列空就阻塞线程
             if (tpPtr->taskQueue.empty()) {
-                cerr << "thread sleep...\n";
+                // cerr << "thread sleep...\n";
                 tpPtr->runningSize.sub();
-                cout << "alive thread num:" << tpPtr->runningSize.size() << "\n";
+                // cerr << "alive thread num:" << tpPtr->runningSize.size() << "\n";
                 if (tpPtr->runningSize.size() == 0) tpPtr->mainThreadCond.notify_one();
                 tpPtr->tCond.wait(lock);
                 tpPtr->runningSize.add();
             }
             // 从任务队列选择任务执行
-            cerr << "thread awake!\n";
+            // cerr << "thread awake!\n";
             haveWork = tpPtr->taskQueue.dequeue(todo);
         }
         if (haveWork) todo.work(todo.arg);
@@ -80,10 +80,10 @@ void threadPool::addWork(void (*work)(void*), void* arg) {
 void threadPool::waitFinish() {
     while(runningSize.size() > 0 || !taskQueue.empty()) {
         std::unique_lock<std::mutex> lock(mTrea_mutex);
-        cerr << "wait for branch thread\n";
+        // cerr << "wait for branch thread\n";
         mainThreadCond.wait(lock);
     }
-    cerr << "all works are finished\n";
+    // cerr << frameID << "all works are finished\n";
 }
 
 void threadPool::exit() {

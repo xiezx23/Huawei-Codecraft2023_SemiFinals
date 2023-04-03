@@ -18,6 +18,9 @@ extern coordinate2 shorestPath[ROBOT_SIZE*WORKBENCH_SIZE][MAP_SIZE*MAP_SIZE];
 extern double pathLength[ROBOT_SIZE*WORKBENCH_SIZE];
 extern int pathSize[ROBOT_SIZE*WORKBENCH_SIZE];
 
+// 初始化位置权重
+extern void initWeight();
+
 // 计算从rtidx号机器人到所有工作台的最短路
 void dijkstra(int rtidx, const coordinate2& src);
 // 计算从rtidx号机器人到指定工作台的最短路

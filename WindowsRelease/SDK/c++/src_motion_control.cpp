@@ -29,8 +29,6 @@ void robot::setSpeed(coordinate dest) {
     // Limit the angular velocity according to the angle
     // double rotatePara = 8; try until here
     double rotatePara = 15;
-    if (K == 25) rotatePara = 10;
-    else if (K == 43) rotatePara = 8;
     if (absAngleDiff * rotatePara > PI) {
         cmd.rotate = sign * PI;
     }
@@ -40,15 +38,14 @@ void robot::setSpeed(coordinate dest) {
 
     // Limit the velocity according to the angle
     if (absAngleDiff * 2 > PI) {
-        cmd.forward = 2 * cos(absAngleDiff);
+        cmd.forward = 1 * cos(absAngleDiff);
     }
     else {
-        cmd.forward = 6 * cos(absAngleDiff); 
+        cmd.forward = 2 * cos(absAngleDiff); 
     }    
     // 对撞墙进行特判
     coordinate detectPoint;                 // 探测点
     double para3 = 0.1;
-    if (K == 25 || K == 50) para3 = 0.14;
     detectPoint.set(location.x + para3 * lsp.x, location.y + para3 * lsp.y);
     if ((detectPoint.x <= 1 && lsp.x < 0) || (detectPoint.x >= 50 - 1 && lsp.x > 0)) {
         if (cmd.forward > 0) cmd.forward = 0.2 * cmd.forward;
