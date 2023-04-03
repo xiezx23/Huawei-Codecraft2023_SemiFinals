@@ -29,7 +29,7 @@ void initWeight() {
     }
     for (int i = 1; i < MAP_SIZE - 1; ++i) {
         for (int j = 1; j < MAP_SIZE - 1; ++j) {
-            if (obstacle[i][j]) {
+            if (plat[i][j] == '#') {
                 posiWeight[i - 1][j] += 10.0; posiWeight[i + 1][j] += 10.0;
                 posiWeight[i][j - 1] += 10.0; posiWeight[i][j + 1] += 10.0;
                 posiWeight[i - 1][j + 1] += 7.0; posiWeight[i + 1][j + 1] += 7.0;
@@ -48,7 +48,7 @@ void initWeight() {
 }
 
 // 计算从rtidx号机器人到所有工作台的最短路
-void dijkstra(int rtidx, const coordinate2& src) {
+void dijkstra(int rtidx, coordinate2 src) {
     // 当前位置已搜索过
     if (pathSize[rtidx*WORKBENCH_SIZE] != inf) return;
 
