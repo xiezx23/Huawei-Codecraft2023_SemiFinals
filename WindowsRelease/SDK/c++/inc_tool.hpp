@@ -16,7 +16,7 @@ struct coordinate2 {
     int x, y;
     coordinate2(): x(0), y(0) {}
     coordinate2(int xx, int yy): x(xx), y(yy) {}
-    coordinate2(coordinate c): x(c.x/0.5), y(c.y/0.5) {}    
+    coordinate2(coordinate c): x((c.x + 0.25)/0.5), y((c.y + 0.25)/0.5) {}    
     inline bool operator==(const coordinate2& c) const {
         return (c.x == x && c.y == y);
     }
