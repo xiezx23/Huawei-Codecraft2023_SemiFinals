@@ -43,9 +43,8 @@ void robot::checkDest() {
         }
     }
     auto releaseLock = [&](const coordinate2 & t) {
-        path_mutex.lock();
+        std::unique_lock<std::mutex> lock(path_mutex);
         pathlock_release(rtIdx, t.x, t.y);
-        path_mutex.unlock();
     };
 
     if (!taskQueue.empty()) {

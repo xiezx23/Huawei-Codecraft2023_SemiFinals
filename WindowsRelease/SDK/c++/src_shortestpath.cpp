@@ -171,7 +171,7 @@ bool compress(int rtidx, coordinate2 src, int wbidx, coordinate2 dest, bool buy,
     coordinate2 diff, prediff(-2, -2);
     while (dest != src) {        
         cmpdir(diff, s.top(), dest);
-        if (diff == prediff) {
+        if (diff == prediff && !pathlock_type(s.top().x, s.top().y)) {
             s.pop();
         }
         prediff = diff;
@@ -181,21 +181,26 @@ bool compress(int rtidx, coordinate2 src, int wbidx, coordinate2 dest, bool buy,
         
     // 加锁并加入任务队列
     int flag = 1; 
-    path_mutex.lock();
+    std::unique_lock<std::mutex> lock(path_mutex);
     while (s.size() > 1) {
         const coordinate2& c = s.top();
         if (!pathlock_acquire(rtidx, c.x, c.y)) {
             flag = 0;
-
             fprintf(stderr,"fail frameId %d rtIdx:%d wbIdx:%d lockID:%d\n", frameID,rtidx, wbidx, pathlock_type(c.x,c.y));
             break;
         }
-        r.taskQueue.push(task(s.top(), wbidx, 0, 0));
+        r.taskQueue.push(task(c, wbidx, 0, 0));
         s.pop();
+    }
+    if (flag) {
+        coordinate2 c = wb[wbidx].location;
+        if (!pathlock_acquire(rtidx, c.x, c.y)) {
+            flag = 0;
+            fprintf(stderr,"fail frameId %d rtIdx:%d wbIdx:%d lockID:%d\n", frameID,rtidx, wbidx, pathlock_type(c.x,c.y));
+        } else r.taskQueue.push(task(wb[wbidx].location, wbidx, buy, sell));
     }
 
     if (flag) {
-        r.taskQueue.push(task(wb[wbidx].location, wbidx, buy, sell));
 
         // 认为机器人位置发生改变，原最短路无效
         for (int j = 0; j < WORKBENCH_SIZE; j++) {
@@ -213,7 +218,6 @@ bool compress(int rtidx, coordinate2 src, int wbidx, coordinate2 dest, bool buy,
         pathLength[rtidx][wbidx] = inf;
 
     }
-    path_mutex.unlock();
     return flag;
 }
 
