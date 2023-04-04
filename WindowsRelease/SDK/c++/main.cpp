@@ -36,15 +36,15 @@ void init() {
     // 记录机器人的初始坐标
     coordinate2 robotLoc[ROBOT_SIZE];
     K = 0;    
-    for(int i = 0; i < MAP_SIZE; ++i){
-        for(int j = 0; j < MAP_SIZE; ++j){
+    for(int j = MAP_SIZE-1; j + 1; --j){
+        for(int i = 0; i < MAP_SIZE; ++i){
             if(isdigit(plat[i][j])) {
                 wb[K].type = plat[i][j] - '0';
-                workbenchLoc[coordinate2(j, MAP_SIZE-i-1)] = K; 
+                workbenchLoc[coordinate2(i, j)] = K; 
                 wb[K++].reachable = true;                
             }
             else if(plat[i][j] == 'A') {                
-                robotLoc[N++] = coordinate2(j, MAP_SIZE-i-1);
+                robotLoc[N++] = coordinate2(i, j);
             }
         }
     }
