@@ -35,12 +35,11 @@ pair<pair<int,int>,int> profitAndTime[WORKBENCH_SIZE];  // 记录收购价、购
 
 
 void init() {    
-    tp = new threadPool(4);
+    // tp = new threadPool(4);
     // 读取地图信息
     // 记录机器人的初始坐标
-    vector<coordinate2> robotLoc;
-    K = 0;
-    
+    coordinate2 robotLoc[ROBOT_SIZE];
+    K = 0;    
     for(int i = 0; i < MAP_SIZE; ++i){
         for(int j = 0; j < MAP_SIZE; ++j){
             if(isdigit(plat[i][j])) {
@@ -48,16 +47,16 @@ void init() {
                 workbenchLoc[coordinate2(j, MAP_SIZE-i-1)] = K; 
                 wb[K++].reachable = true;                
             }
-            else if(plat[i][j] == 'A') {
-                N++;
-                robotLoc.push_back(coordinate2(j, MAP_SIZE-i-1));
+            else if(plat[i][j] == 'A') {                
+                robotLoc[N++] = coordinate2(j, MAP_SIZE-i-1);
             }
         }
     }
     for (int i = 0; i < ROBOT_SIZE; ++i) {
         rt[i].rtIdx = i;
     }
-    initShorestPath(robotLoc);
+    pathlock_init();
+    initShortestPath(robotLoc);
     // 记录每种物品的收益及生产周期
     profitAndTime[0] = make_pair(make_pair(0,0), INF);
     profitAndTime[1] = make_pair(make_pair(6000,3000), 50);
@@ -136,8 +135,7 @@ int main() {
     readPlat();
     initWeight();
     init();
-    pathlock_init();
-    printMap();
+    // printMap();
     puts("OK");
     fflush(stdout);
     while (scanf("%d", &frameID) != EOF) {
@@ -171,6 +169,6 @@ int main() {
     dataLog.printLog();
     # endif
 
-    tp->exit();
+    // tp->exit();
     return 0;
 }
