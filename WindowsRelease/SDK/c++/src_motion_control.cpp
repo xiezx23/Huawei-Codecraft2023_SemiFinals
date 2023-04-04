@@ -35,24 +35,26 @@ void robot::setSpeed(coordinate dest) {
     else {
         cmd.rotate = sign * rotatePara * absAngleDiff;
     }
-
     // Limit the velocity according to the angle
-    if (absAngleDiff * 2 > PI) {
-        cmd.forward = 1 * cos(absAngleDiff);
+    if (absAngleDiff * 6 > PI) {
+        cmd.forward = 2 * cos(absAngleDiff);
     }
     else {
-        cmd.forward = 2 * cos(absAngleDiff); 
-    }    
-    // 对撞墙进行特判
-    coordinate detectPoint;                 // 探测点
-    double para3 = 0.1;
-    detectPoint.set(location.x + para3 * lsp.x, location.y + para3 * lsp.y);
-    if ((detectPoint.x <= 1 && lsp.x < 0) || (detectPoint.x >= 50 - 1 && lsp.x > 0)) {
-        if (cmd.forward > 0) cmd.forward = 0.2 * cmd.forward;
+        cmd.forward = 6 * cos(absAngleDiff); 
     }
-    else if ((detectPoint.y <= 1 && lsp.y < 0) || (detectPoint.y >= 50 - 1 && lsp.y > 0)) {
-        if (cmd.forward > 0) cmd.forward = 0.2 * cmd.forward;
-    }
+    // Limit the velocity according to the distance to destination
+    double l2d = dis(curTask.destCo, location);
+    if (l2d < 2) cmd.forward /= 2;
+    // // 对撞墙进行特判
+    // coordinate detectPoint;                 // 探测点
+    // double para3 = 0.1;
+    // detectPoint.set(location.x + para3 * lsp.x, location.y + para3 * lsp.y);
+    // if ((detectPoint.x <= 1 && lsp.x < 0) || (detectPoint.x >= 50 - 1 && lsp.x > 0)) {
+    //     if (cmd.forward > 0) cmd.forward = 0.2 * cmd.forward;
+    // }
+    // else if ((detectPoint.y <= 1 && lsp.y < 0) || (detectPoint.y >= 50 - 1 && lsp.y > 0)) {
+    //     if (cmd.forward > 0) cmd.forward = 0.2 * cmd.forward;
+    // }
 
     // 当靠近墙边时，检测是否可能撞墙，若可能，则减速
     // double frame = 0.04;
