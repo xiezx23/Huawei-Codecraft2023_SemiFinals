@@ -15,7 +15,7 @@ int frameID;                        // 当前帧
 int curMoney;                       // 当前金钱
 robot rt[ROBOT_SIZE];               // 机器人
 workbench wb[WORKBENCH_SIZE];       // 工作台
-char plat[MAP_SIZE][MAP_SIZE];      // 输入地图
+char plat[MAP_SIZE][MAP_SIZE + 2];      // 输入地图
 mcmf curFlow;                       // 网络流实例
 logInfo dataLog;                    // 日志实例
 int totalSellNum[WORKBENCH_SIZE];   // 物品的出售次数
@@ -171,6 +171,6 @@ int main() {
     dataLog.printLog();
     # endif
 
+    tp->exit();
     return 0;
 }
-
