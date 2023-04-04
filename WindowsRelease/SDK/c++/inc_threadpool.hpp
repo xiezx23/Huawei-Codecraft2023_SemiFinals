@@ -34,10 +34,8 @@ struct threadTask {
 
 // 并行安全的变量
 struct safeNum {
-private:
     int num;
     std::mutex c_mutex;
-public:
     safeNum() {num = 0;}
     void add(int n = 1);
     void sub(int n = 1);

@@ -91,13 +91,13 @@ void dijkstra(int rtidx, coordinate2 src) {
             if (i < 0 || i >= MAP_SIZE) continue;
             for (int j = y-1; j <= y+1; ++j) {
                 if (j < 0 || j >= MAP_SIZE) continue;
-                // if (plat[MAP_SIZE-j-1][i] == '#') continue;
-                if (resolve_plat[MAP_SIZE-j][i+1] == '#') continue;
-                if (resolve_plat[MAP_SIZE-j][i+1] == '1') continue;
+                // if (plat[i][j] == '#') continue;
+                if (resolve_plat[i+1][j+1] == '#') continue;
+                if (resolve_plat[i+1][j+1] == '1') continue;
                 if (visited[i][j])  continue;
                 precessor[rtidx][i][j].set(x, y);
                 coordinate2 dest(i, j);
-                double d = (abs(x-i)+abs(y-j)==1) ? dis+dis1*posiWeight[MAP_SIZE-j-1][i]: dis+dis2*posiWeight[MAP_SIZE-j-1][i];
+                double d = (abs(x-i)+abs(y-j)==1) ? dis+dis1*posiWeight[i][j]: dis+dis2*posiWeight[i][j];
                 if (workbenchLoc.count(dest)) {
                     // 当前坐标有工作台，更新最短路
                     ++findk;
@@ -134,13 +134,13 @@ void dijkstra(int rtidx, coordinate2 src, int wbidx, coordinate2 dest) {
             if (i < 0 || i >= MAP_SIZE) continue;;
             for (int j = y-1; j <= y+1; ++j) {
                 if (j < 0 || j >= MAP_SIZE) continue;
-                // if (plat[MAP_SIZE-j-1][i] == '#') continue;
-                if (resolve_plat[MAP_SIZE-j][i+1] == '#') continue;
-                if (resolve_plat[MAP_SIZE-j][i+1] == '1') continue;
+                // if (plat[i][j] == '#') continue;
+                if (resolve_plat[i+1][j+1] == '#') continue;
+                if (resolve_plat[i+1][j+1] == '1') continue;
                 if (visited[i][j])  continue;
                 precessor[rtidx][i][j].set(x, y);
                 coordinate2 c(i, j);
-                double d = (abs(x-i)+abs(y-j)==1) ? dis+dis1*posiWeight[MAP_SIZE-j-1][i]: dis+dis2*posiWeight[MAP_SIZE-j-1][i];
+                double d = (abs(x-i)+abs(y-j)==1) ? dis+dis1*posiWeight[i][j]: dis+dis2*posiWeight[i][j];
                 if (c == dest) {
                     // 找到工作台
                     pathLength[rtidx][wbidx] = d;

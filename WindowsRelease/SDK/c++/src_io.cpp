@@ -2,11 +2,23 @@
 
 
 void readPlat() {
-    char line[1024];
-    for (int i = 0; i < 100; ++i) {
-        fgets(plat[i], sizeof(line), stdin);
+    for (int j = MAP_SIZE-1; j + 1; --j) {
+        for (int i = 0; i < MAP_SIZE; ++i) {
+            plat[i][j] = getchar();
+        }
+        getchar();
     }
+    char line[128];
+    // for (int i = 0; i < 100; ++i) {
+    //     fgets(plat[i], sizeof(line), stdin);
+    // }
     fgets(line, sizeof line, stdin); // receive OK
+    // for (int i = 0; i < MAP_SIZE; ++i) {
+    //     for (int j = 0; j < MAP_SIZE; ++j) {
+    //         cerr << plat[i][j];
+    //     } 
+    //     cerr << '\n';
+    // }
 }
 
 void readInfo() {

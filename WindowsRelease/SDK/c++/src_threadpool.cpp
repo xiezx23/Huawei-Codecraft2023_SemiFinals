@@ -78,12 +78,12 @@ void threadPool::addWork(void (*work)(void*), void* arg) {
     }
 }
 void threadPool::waitFinish() {
-    while(runningSize.size() > 0 || !taskQueue.empty()) {
-        std::unique_lock<std::mutex> lock(mTrea_mutex);
+    std::unique_lock<std::mutex> rlock(runningSize.c_mutex);
+    while(runningSize.num > 0 || !taskQueue.empty()) {
         // cerr << "wait for branch thread\n";
-        mainThreadCond.wait(lock);
+        mainThreadCond.wait(rlock);
     }
-    // cerr << frameID << "all works are finished\n";
+    // cerr << "all works are finished\n";
 }
 
 void threadPool::exit() {

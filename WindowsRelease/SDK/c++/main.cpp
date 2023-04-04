@@ -26,29 +26,25 @@ double para1 = 950000;
 double para2 = 7;
 double para4 = 0.35;
 
-// int dwaN = 20;
-// int dwaM = 20;
-// const double dt = 1.0/50;
-
 map<int, std::vector<int>> type2BuyIndex;               // 根据产品类型寻找收购方下标
 pair<pair<int,int>,int> profitAndTime[WORKBENCH_SIZE];  // 记录收购价、购入价以及生产用时
 
 
 void init() {    
-    // tp = new threadPool(4);
+    tp = new threadPool(4);
     // 读取地图信息
     // 记录机器人的初始坐标
     coordinate2 robotLoc[ROBOT_SIZE];
     K = 0;    
-    for(int i = 0; i < MAP_SIZE; ++i){
-        for(int j = 0; j < MAP_SIZE; ++j){
+    for(int j = MAP_SIZE-1; j + 1; --j){
+        for(int i = 0; i < MAP_SIZE; ++i){
             if(isdigit(plat[i][j])) {
                 wb[K].type = plat[i][j] - '0';
-                workbenchLoc[coordinate2(j, MAP_SIZE-i-1)] = K; 
+                workbenchLoc[coordinate2(i, j)] = K; 
                 wb[K++].reachable = true;                
             }
             else if(plat[i][j] == 'A') {                
-                robotLoc[N++] = coordinate2(j, MAP_SIZE-i-1);
+                robotLoc[N++] = coordinate2(i, j);
             }
         }
     }
@@ -100,40 +96,13 @@ void init() {
     }
     // // 预初始化网络流
     // curFlow.init();
-    
-    // // 特判
-    // if (K == 43) {
-    //     // cerr << "map1" << endl;
-    //     para1 = 950000;
-    //     para2 = 6;
-    //     para4 = 1.5;
-    // }
-    // else if (K == 25) {
-    //     // cerr << "map2" << endl;
-    //     curFlow.para1 = -390000;
-    //     curFlow.para2 = 40;
-    // }
-    // else if (K == 50) {
-    //     // cerr << "map3" << endl;
-    //     para1 = 950000;
-    //     para2 = 20;
-    //     para4 = 0.1;
-    // }
-    // else if (K == 18) {
-    //     // cerr << "map4" << endl;
-    //     para1 = 700000;
-    //     para2 = 7;
-    //     para4 = 0.2;
-    //     curFlow.para1 = -390000;
-    //     curFlow.para2 = 45;
-    //     curFlow.para4 = 0.4;
-    // }
 }
 
 
 int main() {
     readPlat();
     initWeight();
+    pathlock_init();
     init();
     // printMap();
     puts("OK");
@@ -169,6 +138,6 @@ int main() {
     dataLog.printLog();
     # endif
 
-    // tp->exit();
+    tp->exit();
     return 0;
 }
