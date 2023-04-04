@@ -25,7 +25,7 @@ void dijkstra(int rtidx, coordinate2 src);
 void dijkstra(int rtidx, coordinate2 src, int wbidx, coordinate2 dest);
 
 // 机器人rtidx调用dijkstra后，对最短路进行压缩
-void compress(int rtidx, coordinate2 src, int wbidx, coordinate2 dest, bool buy, bool sell);
+bool compress(int rtidx, coordinate2 src, int wbidx, coordinate2 dest, bool buy, bool sell);
 // 比较方向
 inline void cmpdir(coordinate2& dir, const coordinate2& c1, const coordinate2& c2); 
 

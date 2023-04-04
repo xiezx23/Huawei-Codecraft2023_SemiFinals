@@ -8,6 +8,9 @@ int lockCnt = 1;
 int lockStatus[MAP_SIZE * MAP_SIZE];
 int robotStatus[4][MAP_SIZE * MAP_SIZE];
 
+std::mutex path_mutex; 
+
+// 并查集维护连通分量
 int pathdetect_find(int g){
     return pathdetect_f[g] < 0 ? g : pathdetect_f[g] = pathdetect_find(pathdetect_f[g]);
 };
@@ -23,6 +26,7 @@ void pathdetect_merge(int a,int b) {
 
 
 void pathlock_init() {
+    lockCnt = 1;
     // 转换地图
     for (int i = 0; i < MAP_SIZE; i++) {
         for (int j = 0; j < MAP_SIZE; j++) {
@@ -73,7 +77,9 @@ void pathlock_init() {
                                             }
                                         }
                                     } else if(di == 2 && abs(dj) == 2) {
-                                        resolve_plat[i + 1][j + dj/2] = c;
+                                        if (resolve_plat[i + 1][j + dj/2] == '.') {
+                                            resolve_plat[i + 1][j + dj/2] = c;
+                                        }
                                     } 
                                     // else if(di + abs(dj) == 5) {
                                     //     int sgnj = dj/abs(dj);
@@ -130,6 +136,9 @@ void pathlock_init() {
     // 初始化锁状态
     lockStatus[0] = 0x3f3f3f;
     for (int i = 1; i < lockCnt; i++) lockStatus[i] = 1;
+    #ifdef PATH_DEBUG
+    fprintf(stderr,"lockCnt : %d\n", lockCnt);
+    #endif
 }
 
 // 输出处理后的地图
@@ -138,10 +147,9 @@ void printMap() {
     for (int i = 0; i < 26; i++) ma[i] = 'a' + i;
     for (int i = 26; i < 52; i++) ma[i] = 'A' + i - 26;
 
-
     // 输出处理后的地图
-    for (int i = 0; i < MAP_SIZE; i++) {
-        for (int j = 0; j < MAP_SIZE; j++) {
+    for (int j = MAP_SIZE - 1; j + 1; --j) {
+        for (int i = 0; i < MAP_SIZE; i++) {
             if (lockID[i][j]) fprintf(stderr,"%c", ma[lockID[i][j]%52]);
             else fprintf(stderr,"%c", (resolve_plat[i+1][j+1] == '#')?'#':'.');
         }
@@ -151,22 +159,38 @@ void printMap() {
 }
 
 // 释放锁
-void pathlock_release(int rtidx, int y, int x) {
-    int id = lockID[y][x];
-    if(!--robotStatus[rtidx][id])++lockStatus[lockID[y][x]];
+void pathlock_release(int rtidx, int x, int y) {
+    int id = lockID[x][y];
+    #ifdef PATH_DEBUG
+    fprintf(stderr,"release curframeID : %d lockID : %d,robot : %d lockStatus : %d robotStatus : %d\n", frameID, id, rtidx, lockStatus[id], robotStatus[rtidx][id]);
+    #endif
+
+    if(!--robotStatus[rtidx][id]) ++lockStatus[id];
 }
 
 // 获取锁
-bool pathlock_acquire(int rtidx, int y, int x) {
-    int id = lockID[y][x], flag = 0;
+bool pathlock_acquire(int rtidx, int x, int y) {
+    int id = lockID[x][y], flag = 0;
+    #ifdef PATH_DEBUG
+    fprintf(stderr,"acquire curframeID : %d lockID : %d,robot : %d lockStatus : %d robotStatus : %d\n", frameID, id, rtidx, lockStatus[id], robotStatus[rtidx][id]);
+    #endif
+    
     if (robotStatus[rtidx][id] > 0) ++robotStatus[rtidx][id],flag = 1;
     else if (lockStatus[id] > 0) --lockStatus[id], ++robotStatus[rtidx][id], flag = 1;
-
+    
+    #ifdef PATH_DEBUG
+    fprintf(stderr,"acquire %s curframeID : %d lockID : %d,robot : %d\n", flag?"success":"fail", frameID, id, rtidx);
+    #endif
     return flag;
 }
 
 // 判断节点是否可经过
-bool pathlock_isReachable(int rtidx, int y, int x) {
-    int id = lockID[y][x];
+bool pathlock_isReachable(int rtidx, int x, int y) {
+    int id = lockID[x][y];
     return (robotStatus[rtidx][id] > 0 || lockStatus[id] > 0);
+}
+
+// 获取锁类型
+int pathlock_type(int x,int y) {
+    return lockID[x][y];
 }

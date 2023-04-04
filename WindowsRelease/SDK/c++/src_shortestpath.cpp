@@ -63,7 +63,11 @@ void initWeight() {
 // 计算从机器人初始位置到达所有工作台的最短路
 void initShortestPath(const coordinate2* oricoordinate) {
     // 机器人到所有位置不可达
-    memset(pathLength, inf, sizeof(pathLength));
+    for (int i = 0; i < ROBOT_SIZE; i++) {
+        for (int j = 0; j < WORKBENCH_SIZE; j++) {
+            pathLength[i][j] = inf;
+        }
+    }
     // 调用dijkstra计算最短路
     for (int i = 0; i < ROBOT_SIZE; ++i) {
         dijkstra(i, oricoordinate[i]);
@@ -94,6 +98,7 @@ void dijkstra(int rtidx, coordinate2 src) {
                 // if (plat[i][j] == '#') continue;
                 if (resolve_plat[i+1][j+1] == '#') continue;
                 if (resolve_plat[i+1][j+1] == '1') continue;
+                if (!pathlock_isReachable(rtidx,i,j)) continue;
                 if (visited[i][j])  continue;
                 precessor[rtidx][i][j].set(x, y);
                 coordinate2 dest(i, j);
@@ -137,6 +142,7 @@ void dijkstra(int rtidx, coordinate2 src, int wbidx, coordinate2 dest) {
                 // if (plat[i][j] == '#') continue;
                 if (resolve_plat[i+1][j+1] == '#') continue;
                 if (resolve_plat[i+1][j+1] == '1') continue;
+                if (!pathlock_isReachable(rtidx,i,j)) continue;
                 if (visited[i][j])  continue;
                 precessor[rtidx][i][j].set(x, y);
                 coordinate2 c(i, j);
@@ -154,14 +160,15 @@ void dijkstra(int rtidx, coordinate2 src, int wbidx, coordinate2 dest) {
 }
 
 // 机器人rtidx调用dijkstra后，对最短路进行压缩，并将压缩后的最短路加入任务队列中
-void compress(int rtidx, coordinate2 src, int wbidx, coordinate2 dest, bool buy, bool sell) {
-    robot& r = rt[rtidx];    
+bool compress(int rtidx, coordinate2 src, int wbidx, coordinate2 dest, bool buy, bool sell) {
+    robot& r = rt[rtidx]; 
+    while (!r.taskQueue.empty()) r.taskQueue.pop();
 
     // 压缩路径
     stack<coordinate2> s;
     s.push(dest);
     dest = precessor[rtidx][dest.x][dest.y];
-    coordinate2 diff, prediff;
+    coordinate2 diff, prediff(-2, -2);
     while (dest != src) {        
         cmpdir(diff, s.top(), dest);
         if (diff == prediff) {
@@ -172,20 +179,42 @@ void compress(int rtidx, coordinate2 src, int wbidx, coordinate2 dest, bool buy,
         dest = precessor[rtidx][dest.x][dest.y];
     }
         
-    // 加入任务队列
-    // ofstream fout("log.txt", ios_base::app);
-    // fout << "new Task: Frame" << frameID << ":(robot" << rtidx << ", " << "work: " << wbidx << ")" << endl;    
+    // 加锁并加入任务队列
+    int flag = 1; 
+    path_mutex.lock();
     while (s.size() > 1) {
+        const coordinate2& c = s.top();
+        if (!pathlock_acquire(rtidx, c.x, c.y)) {
+            flag = 0;
+
+            fprintf(stderr,"fail frameId %d rtIdx:%d wbIdx:%d lockID:%d\n", frameID,rtidx, wbidx, pathlock_type(c.x,c.y));
+            break;
+        }
         r.taskQueue.push(task(s.top(), wbidx, 0, 0));
-        // fout << c.x << ", " << c.y << "(" << s.top().x << ", " << s.top().y << ") -> ";  
         s.pop();
     }
-    r.taskQueue.push(task(wb[wbidx].location, wbidx, buy, sell));
-    // fout << wb[wbidx].location.x << ", " << wb[wbidx].location.y << endl << endl;  
-    // fout.close();
 
-    // 认为机器人位置发生改变，原最短路无效
-    memset(pathLength+rtidx, inf, sizeof(double)*WORKBENCH_SIZE);
+    if (flag) {
+        r.taskQueue.push(task(wb[wbidx].location, wbidx, buy, sell));
+
+        // 认为机器人位置发生改变，原最短路无效
+        for (int j = 0; j < WORKBENCH_SIZE; j++) {
+            pathLength[rtidx][j] = inf;
+        }
+    } else {
+        // 解锁
+        while (!r.taskQueue.empty()) {
+            const coordinate2 c = r.taskQueue.front().destCo;
+            pathlock_release(rtidx, c.x, c.y);
+            r.taskQueue.pop();
+        }
+        
+        // 当前路径无效，需要重新寻找
+        pathLength[rtidx][wbidx] = inf;
+
+    }
+    path_mutex.unlock();
+    return flag;
 }
 
 // 比较方向
