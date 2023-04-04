@@ -31,11 +31,11 @@ void ori_solution() {
         }
     }
     // 指令规划
-    // for (int rtIdx = 0; rtIdx < ROBOT_SIZE; ++rtIdx) {        
-    //     if (rt[rtIdx].holdTime) --rt[rtIdx].holdTime;
-    //     rt[rtIdx].cmd.clean(); // 清除之前指令设置
-    //     rt[rtIdx].checkDest(); // 检查是否到达目的地
-    //     rt[rtIdx].checkTask(); // 任务执行->运动指令
+    for (int rtIdx = 0; rtIdx < ROBOT_SIZE; ++rtIdx) {        
+        // if (rt[rtIdx].holdTime) --rt[rtIdx].holdTime;
+        rt[rtIdx].cmd.clean(); // 清除之前指令设置
+        rt[rtIdx].checkDest(); // 检查是否到达目的地
+        rt[rtIdx].checkTask(); // 任务执行->运动指令
     //     // if (rt[rtIdx].taskQueue.size()) {
     //     //     int wbIdx = rt[rtIdx].taskQueue.front().destId;
     //         // fout << "do Task: Frame" << frameID << ":(robot" << rtIdx << ", " << "work: " << wbIdx << ")" << rt[rtIdx].location.x << "," << rt[rtIdx].location.y << " -> " << rt[rtIdx].taskQueue.front().destCo.x << "," << rt[rtIdx].taskQueue.front().destCo.y << endl << endl;
@@ -43,14 +43,14 @@ void ori_solution() {
     //     vec motion = motionPredict(rtIdx);
     //     rt[rtIdx].cmd.forward = motion.x;
     //     rt[rtIdx].cmd.rotate = motion.y;
-    // }
-    int rtIdxArr[4];
-    for (int rtIdx = 0; rtIdx < ROBOT_SIZE; ++rtIdx) {
-        rtIdxArr[rtIdx] = rtIdx;
-        tp->addWork(&robotWork, (void*)&rtIdxArr[rtIdx]);
     }
+    // int rtIdxArr[4];
+    // for (int rtIdx = 0; rtIdx < ROBOT_SIZE; ++rtIdx) {
+        // rtIdxArr[rtIdx] = rtIdx;
+        // tp->addWork(&robotWork, (void*)&rtIdxArr[rtIdx]);
+    // }
     // collitionAvoidance();
-    tp->waitFinish();
+    // tp->waitFinish();
     // fout.close();
     // 碰撞避免
     // ori_collitionAvoidance(); 

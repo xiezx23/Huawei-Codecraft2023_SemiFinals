@@ -57,8 +57,11 @@ void robot::checkDest() {
                 cmd.buy = true;
                 wb[wb_id].reachable = true;     // 该生产工作台可达
                 taskQueue.pop();                
+                // clock_t start = clock();
                 dijkstra(rtIdx, rt[rtIdx].location, curMission.endIndex, coordinate2(wb[curMission.endIndex].location));
                 compress(rtIdx, curMission.endIndex, 0, 1);
+                // clock_t end = clock();
+                // cerr << "Frame: " << frameID << " dijkstra one workbench cost" << end-start << endl;
             }
             if (curTask.sell) {
                 // 达到消耗工作台
@@ -75,8 +78,12 @@ void robot::checkTask() {
     if (taskQueue.empty()) {
         // 分配新任务
         std::vector<mission> msNode; // 任务节点
+        // clock_t start = clock();
         dijkstra(rtIdx, location);
+        // clock_t end = clock();
+        // cerr << "Frame: " << frameID << " dijkstra all workbench cost" << end-start << endl;
         findMission(msNode, location, lsp);
+        
         bool success = false;
         for (int i = 0; i < msNode.size(); ++i) {
             mission selected = msNode[i];
@@ -132,14 +139,14 @@ void robot::findMission(std::vector<mission>& msNode, coordinate& rtCo, vec& lsp
     for (int wbIdx = 0; wbIdx < K; ++wbIdx) {
         // 寻找有现成产品或正在生产中的可达生产工作台
         #ifdef ESTIMATE
-        if (wb[wbIdx].reachable && pathSize[rtIdx*WORKBENCH_SIZE+wbIdx]!=inf && (wb[wbIdx].pstatus || wb[wbIdx].rtime>=0)) {
+        if (wb[wbIdx].reachable && pathSize[rtIdx][wbIdx]!=inf && (wb[wbIdx].pstatus || wb[wbIdx].rtime>=0)) {
         #else 
-        if (wb[wbIdx].reachable && pathSize[rtIdx*WORKBENCH_SIZE+wbIdx]!=inf && wb[wbIdx].pstatus) {
+        if (wb[wbIdx].reachable && pathSize[rtIdx][wbIdx]!=inf && wb[wbIdx].pstatus) {
         #endif
             int proType = wb[wbIdx].type;
             // 遍历收购方
             for (auto buyWbIdx: type2BuyIndex[proType]) {
-                if (pathSize[rtIdx*WORKBENCH_SIZE+buyWbIdx]==inf) continue;
+                if (pathSize[rtIdx][buyWbIdx]==inf) continue;
                 // 收购方是8或9号工作台，或者，对应原材料格为空
                 if (wb[buyWbIdx].type > 7 || !wb[buyWbIdx].checkHaveProType(proType)) {
                     // 此时从 wbIdx 到 buyWbIdx 是一个潜在任务
