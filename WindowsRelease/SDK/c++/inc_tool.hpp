@@ -11,7 +11,7 @@ struct coordinate {
     void set(double xx, double yy) {x = xx; y = yy;}
 };
 
-// 将物理坐标网格化，将物理实际坐标映射到 100 * 100的网格中
+// 将连续坐标离散化，将连续坐标映射到 100 * 100的离散点中
 struct coordinate2 {
     int x, y;
     coordinate2(): x(0), y(0) {}

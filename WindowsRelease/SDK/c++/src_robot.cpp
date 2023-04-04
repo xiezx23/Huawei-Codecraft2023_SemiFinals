@@ -57,8 +57,11 @@ void robot::checkDest() {
                 cmd.buy = true;
                 wb[wb_id].reachable = true;     // 该生产工作台可达
                 taskQueue.pop();                
-                dijkstra(rtIdx, rt[rtIdx].location, curMission.endIndex, coordinate2(wb[curMission.endIndex].location));
-                compress(rtIdx, curMission.endIndex, 0, 1);
+                // clock_t start = clock();
+                dijkstra(rtIdx, location, curMission.endIndex, wb[curMission.endIndex].location);
+                compress(rtIdx, location, curMission.endIndex, wb[curMission.endIndex].location, 0, 1);
+                // clock_t end = clock();
+                // cerr << "Frame: " << frameID << " dijkstra one workbench cost" << end-start << endl;
             }
             if (curTask.sell) {
                 // 达到消耗工作台
@@ -75,8 +78,12 @@ void robot::checkTask() {
     if (taskQueue.empty()) {
         // 分配新任务
         std::vector<mission> msNode; // 任务节点
+        // clock_t start = clock();
         dijkstra(rtIdx, location);
+        // clock_t end = clock();
+        // cerr << "Frame: " << frameID << " dijkstra all workbench cost" << end-start << endl;
         findMission(msNode, location, lsp);
+        
         bool success = false;
         for (int i = 0; i < msNode.size(); ++i) {
             mission selected = msNode[i];
@@ -87,13 +94,9 @@ void robot::checkTask() {
             #else
             if (wb[selected.startIndex].pstatus && (selected.estFrame + frameID < 15000)) {
             #endif
-                // ofstream fout("log.txt", ios_base::app);
-                // fout << "new Mission: Frame" << frameID << ":(robot" << rtIdx << ") " << selected.startIndex << "->" << selected.endIndex << endl << endl;
-                // fout.close();
+                // cerr << "new Mission: Frame" << frameID << ":(robot" << rtIdx << ") " << selected.startIndex << "->" << selected.endIndex << endl;
                 curMission = selected;
-                compress(rtIdx, curMission.startIndex, 1, 0);
-                // taskQueue.push(task(wb[selected.startIndex].location ,selected.startIndex, 1, 0));
-                // taskQueue.push(task(wb[selected.endIndex].location ,selected.endIndex, 0, 1));
+                compress(rtIdx, location, curMission.startIndex, wb[curMission.startIndex].location, 1, 0);
                 wb[selected.startIndex].reachable = false;    // 该生产工作台不可达
                 wb[curMission.endIndex].setProType(curMission.proType);
                 success = true;
@@ -132,14 +135,14 @@ void robot::findMission(std::vector<mission>& msNode, coordinate& rtCo, vec& lsp
     for (int wbIdx = 0; wbIdx < K; ++wbIdx) {
         // 寻找有现成产品或正在生产中的可达生产工作台
         #ifdef ESTIMATE
-        if (wb[wbIdx].reachable && pathSize[rtIdx*WORKBENCH_SIZE+wbIdx]!=inf && (wb[wbIdx].pstatus || wb[wbIdx].rtime>=0)) {
+        if (wb[wbIdx].reachable && pathLength[rtIdx][wbIdx]>=0 && (wb[wbIdx].pstatus || wb[wbIdx].rtime>=0)) {
         #else 
-        if (wb[wbIdx].reachable && pathSize[rtIdx*WORKBENCH_SIZE+wbIdx]!=inf && wb[wbIdx].pstatus) {
+        if (wb[wbIdx].reachable && pathLength[rtIdx][wbIdx]>=0 && wb[wbIdx].pstatus) {
         #endif
             int proType = wb[wbIdx].type;
             // 遍历收购方
             for (auto buyWbIdx: type2BuyIndex[proType]) {
-                if (pathSize[rtIdx*WORKBENCH_SIZE+buyWbIdx]==inf) continue;
+                if (pathLength[rtIdx][buyWbIdx]<0) continue;
                 // 收购方是8或9号工作台，或者，对应原材料格为空
                 if (wb[buyWbIdx].type > 7 || !wb[buyWbIdx].checkHaveProType(proType)) {
                     // 此时从 wbIdx 到 buyWbIdx 是一个潜在任务
