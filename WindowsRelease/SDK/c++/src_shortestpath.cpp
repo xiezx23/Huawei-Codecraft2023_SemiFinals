@@ -63,7 +63,11 @@ void initWeight() {
 // 计算从机器人初始位置到达所有工作台的最短路
 void initShortestPath(const coordinate2* oricoordinate) {
     // 机器人到所有位置不可达
-    memset(pathLength, inf, sizeof(pathLength));
+    for (int i = 0; i < ROBOT_SIZE; i++) {
+        for (int j = 0; j < WORKBENCH_SIZE; j++) {
+            pathLength[i][j] = inf;
+        }
+    }
     // 调用dijkstra计算最短路
     for (int i = 0; i < ROBOT_SIZE; ++i) {
         dijkstra(i, oricoordinate[i]);
@@ -194,7 +198,9 @@ bool compress(int rtidx, coordinate2 src, int wbidx, coordinate2 dest, bool buy,
         r.taskQueue.push(task(wb[wbidx].location, wbidx, buy, sell));
 
         // 认为机器人位置发生改变，原最短路无效
-        memset(pathLength+rtidx, inf, sizeof(double)*WORKBENCH_SIZE);
+        for (int j = 0; j < WORKBENCH_SIZE; j++) {
+            pathLength[rtidx][j] = inf;
+        }
     } else {
         // 解锁
         while (!r.taskQueue.empty()) {

@@ -77,7 +77,9 @@ void pathlock_init() {
                                             }
                                         }
                                     } else if(di == 2 && abs(dj) == 2) {
-                                        resolve_plat[i + 1][j + dj/2] = c;
+                                        if (resolve_plat[i + 1][j + dj/2] == '.') {
+                                            resolve_plat[i + 1][j + dj/2] = c;
+                                        }
                                     } 
                                     // else if(di + abs(dj) == 5) {
                                     //     int sgnj = dj/abs(dj);

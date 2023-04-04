@@ -1,7 +1,7 @@
 /*** 
  * @Author: Xzx
  * @Date: 2023-03-15 00:10:42
- * @LastEditTime: 2023-04-04 23:31:33
+ * @LastEditTime: 2023-04-05 02:31:43
  * @LastEditors: Xzh
  * @Description: 
  */
@@ -103,7 +103,7 @@ int main() {
     initWeight();
     pathlock_init();
     init();
-    // printMap();
+    printMap();
     puts("OK");
     fflush(stdout);
     while (scanf("%d", &frameID) != EOF) {
