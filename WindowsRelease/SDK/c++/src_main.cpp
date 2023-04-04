@@ -135,9 +135,9 @@ void init() {
 int main() {
     readPlat();
     initWeight();
-    init();
     pathlock_init();
-    printMap();
+    init();
+    // printMap();
     puts("OK");
     fflush(stdout);
     while (scanf("%d", &frameID) != EOF) {
