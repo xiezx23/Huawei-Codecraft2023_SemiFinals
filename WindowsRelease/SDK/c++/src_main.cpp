@@ -48,8 +48,7 @@ void init() {
                 wb[K++].reachable = true;                
             }
             else if(plat[i][j] == 'A') {                
-                robotLoc[N] = coordinate2(j, MAP_SIZE-i-1);
-                N++;
+                robotLoc[N++] = coordinate2(j, MAP_SIZE-i-1);
             }
         }
     }

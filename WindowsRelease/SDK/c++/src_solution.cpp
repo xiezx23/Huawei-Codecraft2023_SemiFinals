@@ -36,10 +36,6 @@ void ori_solution() {
         rt[rtIdx].cmd.clean(); // 清除之前指令设置
         rt[rtIdx].checkDest(); // 检查是否到达目的地
         rt[rtIdx].checkTask(); // 任务执行->运动指令
-    //     // if (rt[rtIdx].taskQueue.size()) {
-    //     //     int wbIdx = rt[rtIdx].taskQueue.front().destId;
-    //         // fout << "do Task: Frame" << frameID << ":(robot" << rtIdx << ", " << "work: " << wbIdx << ")" << rt[rtIdx].location.x << "," << rt[rtIdx].location.y << " -> " << rt[rtIdx].taskQueue.front().destCo.x << "," << rt[rtIdx].taskQueue.front().destCo.y << endl << endl;
-    //     }        
     //     vec motion = motionPredict(rtIdx);
     //     rt[rtIdx].cmd.forward = motion.x;
     //     rt[rtIdx].cmd.rotate = motion.y;
@@ -51,7 +47,6 @@ void ori_solution() {
     // }
     // collitionAvoidance();
     // tp->waitFinish();
-    // fout.close();
     // 碰撞避免
     // ori_collitionAvoidance(); 
     return;
