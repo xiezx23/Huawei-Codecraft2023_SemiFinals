@@ -1,7 +1,7 @@
 /*** 
  * @Author: Xzx
  * @Date: 2023-03-15 00:10:42
- * @LastEditTime: 2023-04-03 01:21:34
+ * @LastEditTime: 2023-04-04 23:31:33
  * @LastEditors: Xzh
  * @Description: 
  */
@@ -51,7 +51,6 @@ void init() {
     for (int i = 0; i < ROBOT_SIZE; ++i) {
         rt[i].rtIdx = i;
     }
-    pathlock_init();
     initShortestPath(robotLoc);
     // 记录每种物品的收益及生产周期
     profitAndTime[0] = make_pair(make_pair(0,0), INF);

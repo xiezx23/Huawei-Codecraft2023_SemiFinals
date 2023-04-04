@@ -42,11 +42,18 @@ void robot::checkDest() {
             haveTemDest = false;
         }
     }
+    auto releaseLock = [&](const coordinate2 & t) {
+        path_mutex.lock();
+        pathlock_release(rtIdx, t.x, t.y);
+        path_mutex.unlock();
+    };
+
     if (!taskQueue.empty()) {
         curTask = taskQueue.front();
         double radium = pd_id ? 0.53 : 0.48;
         if (!curTask.buy && !curTask.sell) {
             if (dis(curTask.destCo, location) < radium + 0.1) {
+                releaseLock(curTask.destCo);
                 taskQueue.pop();
             }            
         }
@@ -56,16 +63,25 @@ void robot::checkDest() {
                 // 到达生产工作台
                 cmd.buy = true;
                 wb[wb_id].reachable = true;     // 该生产工作台可达
+                releaseLock(curTask.destCo);
                 taskQueue.pop();                
                 // clock_t start = clock();
-                dijkstra(rtIdx, location, curMission.endIndex, wb[curMission.endIndex].location);
-                compress(rtIdx, location, curMission.endIndex, wb[curMission.endIndex].location, 0, 1);
+                
+                while (1) {
+                    dijkstra(rtIdx, location, curMission.endIndex, wb[curMission.endIndex].location);
+                    if (pathLength[rtIdx][curMission.endIndex] < 0) {
+                        //TODO等待，可能需要移出当前函数
+                        break;
+                    }
+                    if (compress(rtIdx, location, curMission.endIndex, wb[curMission.endIndex].location, 0, 1)) break;
+                }
                 // clock_t end = clock();
                 // cerr << "Frame: " << frameID << " dijkstra one workbench cost" << end-start << endl;
             }
             if (curTask.sell) {
                 // 达到消耗工作台
                 cmd.sell = true;
+                releaseLock(curTask.destCo);
                 taskQueue.pop();
             }              
         }
@@ -96,11 +112,12 @@ void robot::checkTask() {
             #endif
                 // cerr << "new Mission: Frame" << frameID << ":(robot" << rtIdx << ") " << selected.startIndex << "->" << selected.endIndex << endl;
                 curMission = selected;
-                compress(rtIdx, location, curMission.startIndex, wb[curMission.startIndex].location, 1, 0);
-                wb[selected.startIndex].reachable = false;    // 该生产工作台不可达
-                wb[curMission.endIndex].setProType(curMission.proType);
-                success = true;
-                break;
+                if (compress(rtIdx, location, curMission.startIndex, wb[curMission.startIndex].location, 1, 0)) {
+                    wb[selected.startIndex].reachable = false;    // 该生产工作台不可达
+                    wb[curMission.endIndex].setProType(curMission.proType);
+                    success = true;
+                    break;
+                }
             }
         }
         if (!success) {
