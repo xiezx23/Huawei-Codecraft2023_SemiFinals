@@ -49,7 +49,7 @@ void robot::checkDest() {
 
     if (!taskQueue.empty()) {
         curTask = taskQueue.front();
-        double radium = pd_id ? 0.53 : 0.48;
+        double radium = pd_id ? 0.53 : 0.45;
         if (!curTask.buy && !curTask.sell) {
             if (dis(curTask.destCo, location) < radium + 0.1) {
                 releaseLock(curTask.destCo);

@@ -6,6 +6,8 @@ size_t coordinate2_hash::operator()(const coordinate2& c) const {
 
 // 所有工作台的离散坐标
 unordered_map<coordinate2, int, coordinate2_hash> workbenchLoc;
+// 上一次调用dijkstra时机器人的离散坐标
+coordinate2 robotLocation[ROBOT_SIZE];
 
 // 从机器人i出发的单元最短路径
 // percessor存储了各离散坐标最短路上的前驱
@@ -77,7 +79,9 @@ void initShortestPath(const coordinate2* oricoordinate) {
 // 计算从rtidx号机器人到所有工作台的最短路
 void dijkstra(int rtidx, coordinate2 src) {
     // 当前位置已搜索过
-    if (pathLength[rtidx][0] >= 0) return;
+    if (robotLocation[rtidx] == src) return;
+    robotLocation[rtidx] = src;
+    // cerr << "enter buy dijkstra: Frame" << frameID << " robot" << rtidx << endl;
 
     bool visited[MAP_SIZE][MAP_SIZE] = {0};
     priority_queue<node, vector<node>, greater<node>> q;
@@ -108,7 +112,8 @@ void dijkstra(int rtidx, coordinate2 src) {
                     ++findk;
                     pathLength[rtidx][workbenchLoc[dest]] = d;
                     if (findk == K) {  
-                        // 已找到K个工作台的最短路                      
+                        // 已找到K个工作台的最短路       
+                        // cerr << "success exit buy dijkstra: Frame" << frameID << " robot" << rtidx << endl;               
                         return ;
                     }
                 }
@@ -122,7 +127,9 @@ void dijkstra(int rtidx, coordinate2 src) {
 // 计算从rtidx号机器人到指定工作台的最短路（用于寻找到消耗工作台的最短路，携带了物品）
 void dijkstra(int rtidx, coordinate2 src, int wbidx, coordinate2 dest) {
     // 当前位置已搜索过
-    if (pathLength[rtidx][wbidx] >= 0) return;
+    if (robotLocation[rtidx] == src) return;
+    robotLocation[rtidx] = src;
+    // cerr << "enter sell dijkstra: Frame" << frameID << " robot" << rtidx << " -> " << wbidx << endl;
 
     bool visited[MAP_SIZE][MAP_SIZE] = {0};
     priority_queue<node, vector<node>, greater<node>> q;                    
@@ -150,6 +157,7 @@ void dijkstra(int rtidx, coordinate2 src, int wbidx, coordinate2 dest) {
                 if (c == dest) {
                     // 找到工作台
                     pathLength[rtidx][wbidx] = d;
+                    // cerr << "success exit sell dijkstra: Frame" << frameID << " robot" << rtidx << " -> " << wbidx << endl;
                     return ;
                 }
                 visited[i][j] = true;
@@ -163,6 +171,7 @@ void dijkstra(int rtidx, coordinate2 src, int wbidx, coordinate2 dest) {
 bool compress(int rtidx, coordinate2 src, int wbidx, coordinate2 dest, bool buy, bool sell) {
     robot& r = rt[rtidx]; 
     while (!r.taskQueue.empty()) r.taskQueue.pop();
+    // cerr << "new Task: Frame" << frameID << " robot" << rtidx << " -> " << wbidx << endl;
 
     // 压缩路径
     stack<coordinate2> s;
@@ -201,12 +210,12 @@ bool compress(int rtidx, coordinate2 src, int wbidx, coordinate2 dest, bool buy,
     }
 
     if (flag) {
-
         // 认为机器人位置发生改变，原最短路无效
         for (int j = 0; j < WORKBENCH_SIZE; j++) {
             pathLength[rtidx][j] = inf;
         }
-    } else {
+    } 
+    else {
         // 解锁
         while (!r.taskQueue.empty()) {
             const coordinate2 c = r.taskQueue.front().destCo;
