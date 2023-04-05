@@ -117,6 +117,7 @@ void dijkstra(int rtidx, coordinate2 src) {
             }
         }
     }
+    
 }
 
 // 计算从rtidx号机器人到指定工作台的最短路（用于寻找到消耗工作台的最短路，携带了物品）

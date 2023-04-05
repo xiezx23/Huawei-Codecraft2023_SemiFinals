@@ -25,8 +25,8 @@ void ori_solution() {
     // 根据已分配任务把工作台信息进行同步
     for (int rtIdx = 0; rtIdx < ROBOT_SIZE; ++rtIdx) {
         rt[rtIdx].checkSpeed(); // 保证速度非0
-        if (rt[rtIdx].taskQueue.size()) {
-            mission& tmp = rt[rtIdx].curMission;
+        const mission & tmp = rt[rtIdx].curMission;
+        if (tmp.endIndex != -1) {
             wb[tmp.endIndex].setProType(tmp.proType);
         }
     }
