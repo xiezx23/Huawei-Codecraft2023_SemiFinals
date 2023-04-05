@@ -11,8 +11,8 @@ m(A, x, B) 表示把物品x从A工作台购入并出售给B工作台
 ****/
 
 struct mission {
-    int startIndex; // 起点工作台下标
-    int endIndex;   // 终点工作台下标
+    int startIndex = -1; // 起点工作台下标
+    int endIndex = -1;   // 终点工作台下标
     int proType;    // 产品型号
     double v = 0;   // 价值函数
     double estFrame = 0; // 估计任务消耗帧数
