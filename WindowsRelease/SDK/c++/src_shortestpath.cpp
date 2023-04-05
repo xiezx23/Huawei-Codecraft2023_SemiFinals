@@ -6,6 +6,8 @@ size_t coordinate2_hash::operator()(const coordinate2& c) const {
 
 // 所有工作台的离散坐标
 unordered_map<coordinate2, int, coordinate2_hash> workbenchLoc;
+// 上一次调用dijkstra时机器人的离散坐标
+coordinate2 robotLocation[ROBOT_SIZE];
 
 // 从机器人i出发的单元最短路径
 // percessor存储了各离散坐标最短路上的前驱
@@ -62,12 +64,6 @@ void initWeight() {
 
 // 计算从机器人初始位置到达所有工作台的最短路
 void initShortestPath(const coordinate2* oricoordinate) {
-    // 机器人到所有位置不可达
-    for (int i = 0; i < ROBOT_SIZE; i++) {
-        for (int j = 0; j < WORKBENCH_SIZE; j++) {
-            pathLength[i][j] = inf;
-        }
-    }
     // 调用dijkstra计算最短路
     for (int i = 0; i < ROBOT_SIZE; ++i) {
         dijkstra(i, oricoordinate[i]);
@@ -77,7 +73,12 @@ void initShortestPath(const coordinate2* oricoordinate) {
 // 计算从rtidx号机器人到所有工作台的最短路
 void dijkstra(int rtidx, coordinate2 src) {
     // 当前位置已搜索过
-    if (pathLength[rtidx][0] >= 0) return;
+    if (robotLocation[rtidx] == src) return;
+    robotLocation[rtidx] = src;
+    // 机器人到所有位置不可达
+    for (int i = 0; i < WORKBENCH_SIZE; i++) {
+        pathLength[rtidx][i] = inf;
+    }
 
     bool visited[MAP_SIZE][MAP_SIZE] = {0};
     priority_queue<node, vector<node>, greater<node>> q;
@@ -123,7 +124,12 @@ void dijkstra(int rtidx, coordinate2 src) {
 // 计算从rtidx号机器人到指定工作台的最短路（用于寻找到消耗工作台的最短路，携带了物品）
 void dijkstra(int rtidx, coordinate2 src, int wbidx, coordinate2 dest) {
     // 当前位置已搜索过
-    if (pathLength[rtidx][wbidx] >= 0) return;
+    if (robotLocation[rtidx] == src) return;
+    robotLocation[rtidx] = src;
+    // 机器人到所有位置不可达
+    for (int i = 0; i < WORKBENCH_SIZE; i++) {
+        pathLength[rtidx][i] = inf;
+    }
 
     bool visited[MAP_SIZE][MAP_SIZE] = {0};
     priority_queue<node, vector<node>, greater<node>> q;                    
@@ -201,13 +207,7 @@ bool compress(int rtidx, coordinate2 src, int wbidx, coordinate2 dest, bool buy,
         } else r.taskQueue.push(task(wb[wbidx].location, wbidx, buy, sell));
     }
 
-    if (flag) {
-
-        // 认为机器人位置发生改变，原最短路无效
-        for (int j = 0; j < WORKBENCH_SIZE; j++) {
-            pathLength[rtidx][j] = inf;
-        }
-    } else {
+    if (!flag) {
         // 解锁
         while (!r.taskQueue.empty()) {
             const coordinate2 c = r.taskQueue.front().destCo;
