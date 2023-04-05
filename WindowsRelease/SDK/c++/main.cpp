@@ -40,7 +40,7 @@ void init() {
         for(int i = 0; i < MAP_SIZE; ++i){
             if(isdigit(plat[i][j])) {
                 wb[K].type = plat[i][j] - '0';
-                workbenchLoc[coordinate2(i, j)] = K; 
+                workbenchCoordinate[coordinate2(i, j)] = K; 
                 wb[K++].reachable = true;                
             }
             else if(plat[i][j] == 'A') {                

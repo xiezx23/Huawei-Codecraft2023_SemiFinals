@@ -52,7 +52,7 @@ void robot::checkDest() {
         double radium = pd_id ? 0.53 : 0.45;
         if (!curTask.buy && !curTask.sell) {
             if (dis(curTask.destCo, location) < radium + 0.1) {
-                releaseLock(curTask.destCo);
+                // releaseLock(curTask.destCo);
                 taskQueue.pop();
             }            
         }
@@ -62,25 +62,26 @@ void robot::checkDest() {
                 // 到达生产工作台
                 cmd.buy = true;
                 wb[wb_id].reachable = true;     // 该生产工作台可达
-                releaseLock(curTask.destCo);
+                // releaseLock(curTask.destCo);
                 taskQueue.pop();                
                 // clock_t start = clock();
                 
-                while (1) {
-                    dijkstra(rtIdx, location, curMission.endIndex, wb[curMission.endIndex].location);
-                    if (pathLength[rtIdx][curMission.endIndex] < 0) {
-                        //TODO等待，可能需要移出当前函数
-                        break;
-                    }
-                    if (compress(rtIdx, location, curMission.endIndex, wb[curMission.endIndex].location, 0, 1)) break;
-                }
+                
+                // while (1) {
+                //     dijkstra(rtIdx, location, curMission.endIndex, wb[curMission.endIndex].location);
+                //     if (pathLength[rtIdx][curMission.endIndex] < 0) {
+                //         //TODO等待，可能需要移出当前函数
+                //         break;
+                //     }
+                //     if (compress(rtIdx, location, curMission.endIndex, wb[curMission.endIndex].location, 0, 1)) break;
+                // }
                 // clock_t end = clock();
                 // cerr << "Frame: " << frameID << " dijkstra one workbench cost" << end-start << endl;
             }
             if (curTask.sell) {
                 // 达到消耗工作台
                 cmd.sell = true;
-                releaseLock(curTask.destCo);
+                // releaseLock(curTask.destCo);
                 taskQueue.pop();
             }              
         }
@@ -94,7 +95,7 @@ void robot::checkTask() {
         // 分配新任务
         std::vector<mission> msNode; // 任务节点
         // clock_t start = clock();
-        dijkstra(rtIdx, location);
+        dijkstra(rtIdx, location, true);
         // clock_t end = clock();
         // cerr << "Frame: " << frameID << " dijkstra all workbench cost" << end-start << endl;
         findMission(msNode, location, lsp);
@@ -111,12 +112,13 @@ void robot::checkTask() {
             #endif
                 // cerr << "new Mission: Frame" << frameID << ":(robot" << rtIdx << ") " << selected.startIndex << "->" << selected.endIndex << endl;
                 curMission = selected;
-                if (compress(rtIdx, location, curMission.startIndex, wb[curMission.startIndex].location, 1, 0)) {
+                // if (compress(rtIdx, location, curMission.startIndex, wb[curMission.startIndex].location, curMission.endIndex, wb[curMission.endIndex].location)) {
+                    compress(rtIdx, location, curMission.startIndex, wb[curMission.startIndex].location, curMission.endIndex, wb[curMission.endIndex].location);
                     wb[selected.startIndex].reachable = false;    // 该生产工作台不可达
                     wb[curMission.endIndex].setProType(curMission.proType);
                     success = true;
                     break;
-                }
+                // }
             }
         }
         if (!success) {
@@ -151,14 +153,14 @@ void robot::findMission(std::vector<mission>& msNode, coordinate& rtCo, vec& lsp
     for (int wbIdx = 0; wbIdx < K; ++wbIdx) {
         // 寻找有现成产品或正在生产中的可达生产工作台
         #ifdef ESTIMATE
-        if (wb[wbIdx].reachable && pathLength[rtIdx][wbIdx]>=0 && (wb[wbIdx].pstatus || wb[wbIdx].rtime>=0)) {
+        if (wb[wbIdx].reachable && rtPathLength[rtIdx][wbIdx]>=0 && (wb[wbIdx].pstatus || wb[wbIdx].rtime>=0)) {
         #else 
-        if (wb[wbIdx].reachable && pathLength[rtIdx][wbIdx]>=0 && wb[wbIdx].pstatus) {
+        if (wb[wbIdx].reachable && rtPathLength[rtIdx][wbIdx]>=0 && wb[wbIdx].pstatus) {
         #endif
             int proType = wb[wbIdx].type;
             // 遍历收购方
             for (auto buyWbIdx: type2BuyIndex[proType]) {
-                if (pathLength[rtIdx][buyWbIdx]<0) continue;
+                if (wbPathLength[wbIdx][buyWbIdx]<0) continue;
                 // 收购方是8或9号工作台，或者，对应原材料格为空
                 if (wb[buyWbIdx].type > 7 || !wb[buyWbIdx].checkHaveProType(proType)) {
                     // 此时从 wbIdx 到 buyWbIdx 是一个潜在任务
