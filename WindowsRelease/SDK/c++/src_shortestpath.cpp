@@ -66,6 +66,63 @@ void initWeight() {
             }
         }
     }
+    for (int k = 0; k < K; ++k) {
+        coordinate2 wbLoca(wb[k].location);
+        posiWeight[wbLoca.x][wbLoca.y] = 1;
+    }
+}
+
+// 预处理，对点的可达性做判断
+void initAccessibility() {
+    for (int i = 0; i < MAP_SIZE; ++i) {
+        for (int j = 0; j < MAP_SIZE; ++j) {
+            if (resolve_plat[i+1][j+1] == '#')  continue;
+            if (posiWeight[i][j] < 1.1) continue;
+
+            coordinate cur = pointCorrection(coordinate2(i, j));
+            double distance;
+            const int bias = 2;
+            for (int di = -bias; di <= bias; ++di) {
+                if (i+di+1 < 0 || i+di+1 > MAP_SIZE+1) continue;
+                for (int dj = -bias; dj <= bias; ++dj) {
+                    if (!di && !dj) continue;
+                    if (j+dj+1 < 0 || j+dj+1 > MAP_SIZE+1) continue;
+                    if (resolve_plat[i+di+1][j+dj+1] != '#') continue;
+                    double delta_d = sqrt(di*di + dj*dj)/max(fabs(di), fabs(dj));
+                    coordinate wall = coordinate2(i+di, j+dj);
+                    distance = dis(cur, wall);
+                    if (distance <= 0.45 + 0.25*delta_d) {
+                        resolve_plat[i+1][j+1] = '1';
+                        di = bias + 1;
+                        break;
+                    }
+                    else if (distance <= 0.53 + 0.25*delta_d) {
+                        resolve_plat[i+1][j+1] = '3';
+                    }
+                }
+            }
+        }
+    }
+
+    for (int k = 0; k < K; ++k) {
+        coordinate2 c = wb[k].location;        
+        int i = c.x, j = c.y;
+        if (resolve_plat[i+1][j+1] == '1') {
+            for (int di = -1; di <= 1; ++di) {
+                if (i+di+1 < 0 || i+di+1 > MAP_SIZE+1) continue;
+                for (int dj = -1; dj <= 1; ++dj) {
+                    if (!di && !dj) continue;
+                    if (j+dj+1 < 0 || j+dj+1 > MAP_SIZE+1) continue;
+                    if (resolve_plat[i+di+1][j+dj+1] != '#' && resolve_plat[i+di+1][j+dj+1] != '1') {
+                        resolve_plat[i+1][j+1] = '3';
+                        di = 2;
+                        break;
+                    }             
+                }
+            }
+        }
+    }
+    
 }
 
 // 预处理，计算从机器人及工作台到所有工作台的最短路
@@ -125,10 +182,9 @@ void dijkstra(int idx, coordinate2 src, bool flag) {
             if (i < 0 || i >= MAP_SIZE) continue;
             for (int j = y-1; j <= y+1; ++j) {
                 if (j < 0 || j >= MAP_SIZE) continue;
-                // if (plat[i][j] == '#') continue;
                 if (resolve_plat[i+1][j+1] == '#') continue;
                 if (resolve_plat[i+1][j+1] == '1') continue;
-                // if (!flag && resolve_plat[i+1][j+1] == '3') continue;
+                if (!flag && resolve_plat[i+1][j+1] == '3') continue;
                 if (flag && !pathlock_isReachable(idx,i,j)) continue;
                 if (visited[i][j])  continue;
                 precessor[i][j].set(x, y);
@@ -183,11 +239,10 @@ void dijkstra(int idx, coordinate2 src, int wbIdx, coordinate2 dest, bool flag) 
             if (i < 0 || i >= MAP_SIZE) continue;;
             for (int j = y-1; j <= y+1; ++j) {
                 if (j < 0 || j >= MAP_SIZE) continue;
-                // if (plat[i][j] == '#') continue;
                 if (resolve_plat[i+1][j+1] == '#') continue;
                 if (resolve_plat[i+1][j+1] == '1') continue;
                 if (flag && !pathlock_isReachable(idx,i,j)) continue;
-                // if (resolve_plat[i+1][j+1] == '3') continue;
+                if (resolve_plat[i+1][j+1] == '3') continue;
                 if (visited[i][j])  continue;
                 precessor[i][j].set(x, y);
                 coordinate2 c(i, j);

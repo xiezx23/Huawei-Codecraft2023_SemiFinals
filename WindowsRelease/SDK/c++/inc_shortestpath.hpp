@@ -20,6 +20,9 @@ extern double wbPathLength[WORKBENCH_SIZE][WORKBENCH_SIZE];
 // 初始化位置权重
 extern void initWeight();
 
+// 预处理，对点的可达性做判断
+void initAccessibility();
+
 // 预处理，计算从机器人及工作台到所有工作台的最短路
 void initShortestPath(const coordinate2* oricoordinate);
 
