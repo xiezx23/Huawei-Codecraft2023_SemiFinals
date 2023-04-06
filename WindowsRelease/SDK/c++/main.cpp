@@ -103,7 +103,7 @@ int main() {
     initWeight();
     pathlock_init();
     init();
-    // printMap();
+    printMap();
     puts("OK");
     fflush(stdout);
     while (scanf("%d", &frameID) != EOF) {
