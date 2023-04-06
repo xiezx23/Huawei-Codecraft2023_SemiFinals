@@ -45,8 +45,8 @@ void initWeight() {
     for (int i = 1; i < MAP_SIZE - 1; ++i) {
         for (int j = 1; j < MAP_SIZE - 1; ++j) {
             if (plat[i][j] == '#') {
-                posiWeight[i - 1][j] += 10.0; posiWeight[i + 1][j] += 10.0;
-                posiWeight[i][j - 1] += 10.0; posiWeight[i][j + 1] += 10.0;
+                posiWeight[i - 1][j] += 20.0; posiWeight[i + 1][j] += 20.0;
+                posiWeight[i][j - 1] += 20.0; posiWeight[i][j + 1] += 20.0;
                 posiWeight[i - 1][j + 1] += 7.0; posiWeight[i + 1][j + 1] += 7.0;
                 posiWeight[i - 1][j - 1] += 7.0; posiWeight[i + 1][j - 1] += 7.0;
                 // for (int x = max(0, i - 2); x < min(100, i + 3); ++x) {
@@ -172,7 +172,7 @@ bool compress(int rtidx, coordinate2 src, int wbidx, coordinate2 dest, bool buy,
     while (!r.taskQueue.empty()) r.taskQueue.pop();
 
     // 压缩路径
-    stack<coordinate2> s;
+    stack<coordinate> s;
     s.push(dest);
     dest = precessor[rtidx][dest.x][dest.y];
     coordinate2 diff, prediff(-2, -2);
@@ -182,7 +182,7 @@ bool compress(int rtidx, coordinate2 src, int wbidx, coordinate2 dest, bool buy,
             s.pop();
         }
         prediff = diff;
-        s.push(dest);
+        s.push(pointCorrection(coordinate2(dest)));
         dest = precessor[rtidx][dest.x][dest.y];
     }
         
