@@ -91,6 +91,15 @@ void pathlock_init() {
                                             setC(i + 2, j + sgnj);
                                         }
                                     }
+                                    else if(di + abs(dj) == 6) {
+                                        if (di == abs(dj)){
+                                            int sgnj = dj/abs(dj);
+                                            setC(i + 1, j + sgnj);
+                                            setC(i + 2, j + sgnj);
+                                            setC(i + 2, j + 2*sgnj);
+                                            setC(i + 1, j + 2*sgnj);
+                                        }
+                                    }
                                 }
                             }
                         }
