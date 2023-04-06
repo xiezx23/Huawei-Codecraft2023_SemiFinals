@@ -1,10 +1,9 @@
 #include "inc_route_correction.hpp"
-
 pair<int, int> changePoint[] = {
     make_pair(1,0), make_pair(-1,0), make_pair(0,1), make_pair(0,-1),
     make_pair(1,1), make_pair(1,-1), make_pair(-1,1), make_pair(-1,-1)
 };
-coordinate pointCorrection(coordinate2&& oriPosi) {
+coordinate pointCorrection(const coordinate2& oriPosi) {
     auto checkInLegal = [](int x, int y) {
         if (x < 0 || x >= MAP_SIZE || y < 0 || y >= MAP_SIZE) return false;
         return true;
