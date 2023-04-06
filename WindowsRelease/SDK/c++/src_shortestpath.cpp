@@ -196,91 +196,87 @@ void dijkstra(int idx, coordinate2 src, int wbIdx, coordinate2 dest, bool flag) 
 }
 
 // 机器人rtidx调用dijkstra后，将从当前位置到生产工作台，及从生产工作台到消费工作台的最短路进行压缩，并加入任务队列
-void compress(int rtIdx, coordinate2 src, int startIdx, coordinate2 dest1, int endIdx, coordinate2 dest2) {
+bool compress(int rtIdx, coordinate2 src, int startIdx, coordinate2 dest1, int endIdx, coordinate2 dest2) {
     robot& r = rt[rtIdx]; 
     while (!r.taskQueue.empty()) r.taskQueue.pop();
     // cerr << "new Task: Frame" << frameID << " robot" << rtidx << " -> " << wbidx << endl;
 
-    stack<coordinate2> s;
-    coordinate2 diff, prediff;
-    coordinate2 t;
+    stack<coordinate2> s1, s2;
+    coordinate2 diff, prediff(-2,-2);
+    coordinate2 t, t2 = dest1;
+
     // 对去往生产工作台的最短路进行压缩   
-    s.push(dest1);
+    s1.push(dest1);
     t = rtPrecessor[rtIdx][dest1.x][dest1.y];    
     while (t != src) {        
-        cmpdir(diff, s.top(), t);
-        // if (diff == prediff && !pathlock_type(s.top().x, s.top().y)) {
-        if (diff == prediff) {
-            s.pop();
+        cmpdir(diff, t2, t);
+        if (diff == prediff && !pathlock_type(t2)) {
+            s1.pop();
         }
         prediff = diff;
-        s.push(t);
+        s1.push(t);
+        swap(t,t2);
         t = rtPrecessor[rtIdx][t.x][t.y];   
-    }        
-    // 加入任务队列
-    while (s.size() > 1) {
-        const coordinate2& c = s.top();
-        r.taskQueue.push(task(c, startIdx, 0, 0));
-        s.pop();
     }
-    r.taskQueue.push(task(wb[startIdx].location, startIdx, 1, 0));
-    s.pop();
-
-    // 对去往生产工作台的最短路进行压缩   
-    prediff.set(0, 0);
-    s.push(dest2);
-    t = wbPrecessor[startIdx][dest2.x][dest2.y];   
+    
+    // 对去往消费工作台的最短路进行压缩
+    s2.push(dest2);
+    t = wbPrecessor[startIdx][dest2.x][dest2.y];
+    t2 = dest2, prediff = coordinate2(-2,-2);
     while (t != dest1) {        
-        cmpdir(diff, s.top(), t);
-        // if (diff == prediff && !pathlock_type(s.top().x, s.top().y)) {
-        if (diff == prediff) {
-            s.pop();
+        cmpdir(diff, t2, t);
+        if (diff == prediff && !pathlock_type(t2)) {
+            s2.pop();
         }
         prediff = diff;
-        s.push(t);
-        t = wbPrecessor[startIdx][t.x][t.y];  
-    }        
-    // 加入任务队列
-    while (s.size() > 1) {
-        const coordinate2& c = s.top();
-        r.taskQueue.push(task(c, endIdx, 0, 0));
-        s.pop();
+        s2.push(t);
+        swap(t,t2);
+        t = wbPrecessor[startIdx][t.x][t.y];   
     }
-    r.taskQueue.push(task(wb[endIdx].location, endIdx, 0, 1));
 
-    // int flag = 1; 
-    // std::unique_lock<std::mutex> lock(path_mutex);
-    // while (s.size() > 1) {
-    //     const coordinate2& c = s.top();
-    //     if (!pathlock_acquire(rtidx, c.x, c.y)) {
-    //         flag = 0;
-    //         fprintf(stderr,"fail frameId %d rtIdx:%d wbIdx:%d lockID:%d\n", frameID,rtidx, wbidx, pathlock_type(c.x,c.y));
-    //         break;
-    //     }
-    //     r.taskQueue.push(task(c, wbidx, 0, 0));
-    //     s.pop();
-    // }
-    // if (flag) {
-    //     coordinate2 c = wb[wbidx].location;
-    //     if (!pathlock_acquire(rtidx, c.x, c.y)) {
-    //         flag = 0;
-    //         fprintf(stderr,"fail frameId %d rtIdx:%d wbIdx:%d lockID:%d\n", frameID,rtidx, wbidx, pathlock_type(c.x,c.y));
-    //     } else r.taskQueue.push(task(wb[wbidx].location, wbidx, buy, sell));
-    // }
+    // 加入任务队列
+    int flag = 1; 
+    auto testAndSet = [&](const coordinate2& c, const int &wbIdx, int buy = 0,int sell = 0){
+        if (!pathlock_acquire(rtIdx, c)) {
+            flag = 0;
+        } else {
+            r.taskQueue.push(task(c, wbIdx, buy, sell));
+        }
+    };
 
-    // if (!flag) {
-        // // 解锁
-        // while (!r.taskQueue.empty()) {
-            // const coordinate2 c = r.taskQueue.front().destCo;
-            // pathlock_release(rtidx, c.x, c.y);
-            // r.taskQueue.pop();
-        // }
-        
-    //     // 当前路径无效，需要重新寻找
-    //     pathLength[rtidx][wbidx] = inf;
+    std::unique_lock<std::mutex> lock(path_mutex);
+    while (s1.size() > 1 ) {
+        testAndSet(s1.top(), startIdx);
+        if (!flag) break;
+        s1.pop();
+    }
+    if (flag) {
+        testAndSet(wb[startIdx].location, startIdx, 1, 0);
+        if (flag) {
+            while (s2.size() > 1) {
+                testAndSet(s2.top(), endIdx);
+                if (!flag) break;
+                s2.pop();
+            }
+            if (flag) {
+                testAndSet(wb[endIdx].location, endIdx, 0, 1);
+            }
+        }
+    }
 
-    // }
-    // return flag;
+    if (!flag) {
+        // 解锁
+        while (!r.taskQueue.empty()) {
+            const coordinate2 &c = r.taskQueue.front().destCo;
+            pathlock_release(rtIdx, c);
+            r.taskQueue.pop();
+        }
+
+        // 当前路径无效，需要重新寻找
+        rtPathLength[rtIdx][startIdx] = inf;
+    }
+
+    return flag;
 }
 
 // 比较方向
