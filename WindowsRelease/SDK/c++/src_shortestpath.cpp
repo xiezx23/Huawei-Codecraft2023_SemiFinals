@@ -68,6 +68,37 @@ void initWeight() {
     }
 }
 
+// 预处理，对点的可达性做判断
+void initAccessibility() {
+    for (int i = 0; i < MAP_SIZE; ++i) {
+        for (int j = 0; j < MAP_SIZE; ++j) {
+            if (resolve_plat[i+1][j+1] == '#')  continue;
+            if (posiWeight[i][j] < 1.1) continue;
+
+            coordinate cur = pointCorrection(coordinate2(i, j));
+            double distance;
+            for (int di = -1; di <= 1; ++di) {
+                if (i+di+1 < 0 || i+di+1 > MAP_SIZE+1) continue;
+                for (int dj = -1; dj <= 1; ++dj) {
+                    if (!di && !dj) continue;
+                    if (j+dj+1 < 0 || j+dj+1 > MAP_SIZE+1) continue;
+                    if (resolve_plat[i+di+1][j+dj+1] != '#') continue;
+                    coordinate wall = coordinate2(i+di, j+dj);
+                    distance = dis(cur, wall);
+                    if (distance < 0.45 + 0.26) {
+                        resolve_plat[i+1][j+1] = '1';
+                        di = 2;
+                        break;
+                    }
+                    else if (distance < 0.53 + 0.26) {
+                        resolve_plat[i+1][j+1] = '3';
+                    }
+                }
+            }
+        }
+    }
+}
+
 // 预处理，计算从机器人及工作台到所有工作台的最短路
 void initShortestPath(const coordinate2* oricoordinate) {
     // 机器人到所有位置不可达
@@ -121,10 +152,9 @@ void dijkstra(int idx, coordinate2 src, bool flag) {
             if (i < 0 || i >= MAP_SIZE) continue;
             for (int j = y-1; j <= y+1; ++j) {
                 if (j < 0 || j >= MAP_SIZE) continue;
-                // if (plat[i][j] == '#') continue;
                 if (resolve_plat[i+1][j+1] == '#') continue;
                 if (resolve_plat[i+1][j+1] == '1') continue;
-                // if (!flag && resolve_plat[i+1][j+1] == '3') continue;
+                if (!flag && resolve_plat[i+1][j+1] == '3') continue;
                 if (flag && !pathlock_isReachable(idx,i,j)) continue;
                 if (visited[i][j])  continue;
                 precessor[i][j].set(x, y);
@@ -175,11 +205,10 @@ void dijkstra(int idx, coordinate2 src, int wbIdx, coordinate2 dest, bool flag) 
             if (i < 0 || i >= MAP_SIZE) continue;;
             for (int j = y-1; j <= y+1; ++j) {
                 if (j < 0 || j >= MAP_SIZE) continue;
-                // if (plat[i][j] == '#') continue;
                 if (resolve_plat[i+1][j+1] == '#') continue;
                 if (resolve_plat[i+1][j+1] == '1') continue;
                 if (flag && !pathlock_isReachable(idx,i,j)) continue;
-                // if (resolve_plat[i+1][j+1] == '3') continue;
+                if (resolve_plat[i+1][j+1] == '3') continue;
                 if (visited[i][j])  continue;
                 precessor[i][j].set(x, y);
                 coordinate2 c(i, j);

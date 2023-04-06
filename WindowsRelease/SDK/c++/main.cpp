@@ -102,7 +102,8 @@ int main() {
     readPlat();
     initWeight();
     pathlock_init();
-    init();
+    initAccessibility();
+    init();    
     printMap();
     puts("OK");
     fflush(stdout);

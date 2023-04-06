@@ -179,8 +179,9 @@ void printMap() {
     // 输出处理后的地图
     for (int j = MAP_SIZE - 1; j + 1; --j) {
         for (int i = 0; i < MAP_SIZE; i++) {
-            if (lockID[i][j]) fprintf(stderr,"%c", ma[lockID[i][j]%52]);
-            else fprintf(stderr,"%c", resolve_plat[i+1][j+1]);
+            fprintf(stderr,"%c", resolve_plat[i+1][j+1]);
+            // if (lockID[i][j]) fprintf(stderr,"%c", ma[lockID[i][j]%52]);
+            // else fprintf(stderr,"%c", resolve_plat[i+1][j+1]);
         }
         cerr<<endl;
     }
