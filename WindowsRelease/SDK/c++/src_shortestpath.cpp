@@ -273,7 +273,9 @@ bool compress(int rtIdx, coordinate2 src, int startIdx, coordinate2 dest1, int e
         }
 
         // 当前路径无效，需要重新寻找
-        rtPathLength[rtIdx][startIdx] = inf;
+        // rtPathLength[rtIdx][startIdx] = inf;
+        // 下一帧需要重新检测到所有生产工作台的可能路径
+        robotCoordinate[rtIdx].set(-1,-1);
     }
 
     return flag;
