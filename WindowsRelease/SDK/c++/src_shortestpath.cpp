@@ -144,6 +144,7 @@ void dijkstra(int idx, coordinate2 src, bool flag) {
             }
         }
     }
+    
 }
 
 // 计算从idx号机器人或idx号工作台到指定工作台的最短路（用于寻找到消耗工作台的最短路，携带了物品）
@@ -223,6 +224,7 @@ void compress(int rtIdx, coordinate2 src, int startIdx, coordinate2 dest1, int e
         s.pop();
     }
     r.taskQueue.push(task(wb[startIdx].location, startIdx, 1, 0));
+    s.pop();
 
     // 对去往生产工作台的最短路进行压缩   
     prediff.set(0, 0);
@@ -266,19 +268,13 @@ void compress(int rtIdx, coordinate2 src, int startIdx, coordinate2 dest1, int e
     //     } else r.taskQueue.push(task(wb[wbidx].location, wbidx, buy, sell));
     // }
 
-    // if (flag) {
-    //     // 认为机器人位置发生改变，原最短路无效
-    //     for (int j = 0; j < WORKBENCH_SIZE; j++) {
-    //         pathLength[rtidx][j] = inf;
-    //     }
-    // } 
-    // else {
-    //     // 解锁
-    //     while (!r.taskQueue.empty()) {
-    //         const coordinate2 c = r.taskQueue.front().destCo;
-    //         pathlock_release(rtidx, c.x, c.y);
-    //         r.taskQueue.pop();
-    //     }
+    // if (!flag) {
+        // // 解锁
+        // while (!r.taskQueue.empty()) {
+            // const coordinate2 c = r.taskQueue.front().destCo;
+            // pathlock_release(rtidx, c.x, c.y);
+            // r.taskQueue.pop();
+        // }
         
     //     // 当前路径无效，需要重新寻找
     //     pathLength[rtidx][wbidx] = inf;
