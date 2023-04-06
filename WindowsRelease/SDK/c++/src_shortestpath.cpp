@@ -51,8 +51,8 @@ void initWeight() {
     for (int i = 1; i < MAP_SIZE - 1; ++i) {
         for (int j = 1; j < MAP_SIZE - 1; ++j) {
             if (plat[i][j] == '#') {
-                posiWeight[i - 1][j] += 10.0; posiWeight[i + 1][j] += 10.0;
-                posiWeight[i][j - 1] += 10.0; posiWeight[i][j + 1] += 10.0;
+                posiWeight[i - 1][j] += 20.0; posiWeight[i + 1][j] += 20.0;
+                posiWeight[i][j - 1] += 20.0; posiWeight[i][j + 1] += 20.0;
                 posiWeight[i - 1][j + 1] += 7.0; posiWeight[i + 1][j + 1] += 7.0;
                 posiWeight[i - 1][j - 1] += 7.0; posiWeight[i + 1][j - 1] += 7.0;
                 // for (int x = max(0, i - 2); x < min(100, i + 3); ++x) {
@@ -124,8 +124,8 @@ void dijkstra(int idx, coordinate2 src, bool flag) {
                 // if (plat[i][j] == '#') continue;
                 if (resolve_plat[i+1][j+1] == '#') continue;
                 if (resolve_plat[i+1][j+1] == '1') continue;
-                if (!flag && resolve_plat[i+1][j+1] == '3') continue;
-                // if (flag && !pathlock_isReachable(idx,i,j)) continue;
+                // if (!flag && resolve_plat[i+1][j+1] == '3') continue;
+                if (flag && !pathlock_isReachable(idx,i,j)) continue;
                 if (visited[i][j])  continue;
                 precessor[i][j].set(x, y);
                 coordinate2 dest(i, j);
@@ -178,8 +178,8 @@ void dijkstra(int idx, coordinate2 src, int wbIdx, coordinate2 dest, bool flag) 
                 // if (plat[i][j] == '#') continue;
                 if (resolve_plat[i+1][j+1] == '#') continue;
                 if (resolve_plat[i+1][j+1] == '1') continue;
-                if (resolve_plat[i+1][j+1] == '3') continue;
-                // if (flag && !pathlock_isReachable(idx,i,j)) continue;
+                if (flag && !pathlock_isReachable(idx,i,j)) continue;
+                // if (resolve_plat[i+1][j+1] == '3') continue;
                 if (visited[i][j])  continue;
                 precessor[i][j].set(x, y);
                 coordinate2 c(i, j);

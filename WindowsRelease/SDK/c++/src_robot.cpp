@@ -51,7 +51,7 @@ void robot::checkDest() {
         curTask = taskQueue.front();
         double radium = pd_id ? 0.53 : 0.45;
         if (!curTask.buy && !curTask.sell) {
-            if (dis(curTask.destCo, location) < radium + 0.1) {
+            if (dis(curTask.destCo, location) < radium + 0.26) {
                 releaseLock(curTask.destCo);
                 taskQueue.pop();
             }            
@@ -80,10 +80,6 @@ void robot::checkDest() {
 
 // 检查任务队列情况
 void robot::checkTask() {
-    auto releaseLock = [&](const coordinate2 & t) {
-        std::unique_lock<std::mutex> lock(path_mutex);
-        pathlock_release(rtIdx, t);
-    };
 
     if (taskQueue.empty()) {
         bool success = false;
@@ -116,7 +112,6 @@ void robot::checkTask() {
             }
         }
         if (!success) {
-            if (K==25 || K == 18) setSpeed(curFlow.preDestion[this->rtIdx]);
             return;
         }
     }
@@ -127,7 +122,7 @@ void robot::checkTask() {
     else {
         // 执行当前任务，前往目的地
         curTask = taskQueue.front();
-        setSpeed(curTask.destCo);
+        setSpeed(pointCorrection(curTask.destCo));
     }
 }
 
@@ -160,9 +155,6 @@ void robot::findMission(std::vector<mission>& msNode, coordinate& rtCo, vec& lsp
                     // 此时从 wbIdx 到 buyWbIdx 是一个潜在任务
                     mission pot = mission(wbIdx, buyWbIdx, proType);
                     pot.countValue(rtIdx, proType, lsp);
-                    if (K == 18 && rtIdx < 2 && wb[buyWbIdx].type == 4) {
-                        pot.v *= 2;
-                    }
                     msNode.push_back(pot);
                 } 
             }
