@@ -44,7 +44,7 @@ void robot::checkDest() {
     }
     auto releaseLock = [&](const coordinate2 & t) {
         std::unique_lock<std::mutex> lock(path_mutex);
-        pathlock_release(rtIdx, t.x, t.y);
+        pathlock_release(rtIdx, t);
     };
 
     if (!taskQueue.empty()) {
@@ -52,7 +52,7 @@ void robot::checkDest() {
         double radium = pd_id ? 0.53 : 0.45;
         if (!curTask.buy && !curTask.sell) {
             if (dis(curTask.destCo, location) < radium + 0.1) {
-                // releaseLock(curTask.destCo);
+                releaseLock(curTask.destCo);
                 taskQueue.pop();
             }            
         }
@@ -62,7 +62,7 @@ void robot::checkDest() {
                 // 到达生产工作台
                 cmd.buy = true;
                 wb[wb_id].reachable = true;     // 该生产工作台可达
-                // curMission.startIndex = -1;     // 重置当前任务的起点
+                releaseLock(curTask.destCo);
                 taskQueue.pop();                
                 // clock_t start = clock();              
                 // clock_t end = clock();
@@ -71,7 +71,7 @@ void robot::checkDest() {
             if (curTask.sell) {
                 // 达到消耗工作台
                 cmd.sell = true;
-                // curMission.endIndex = -1;       // 重置当前任务的终点
+                releaseLock(curTask.destCo);
                 taskQueue.pop();
             }              
         }
@@ -82,57 +82,39 @@ void robot::checkDest() {
 void robot::checkTask() {
     auto releaseLock = [&](const coordinate2 & t) {
         std::unique_lock<std::mutex> lock(path_mutex);
-        pathlock_release(rtIdx, t.x, t.y);
+        pathlock_release(rtIdx, t);
     };
 
     if (taskQueue.empty()) {
         bool success = false;
 
-        // if (curMission.endIndex != -1) {
-            // // 分配至终点的路径
-            // while (1) {
-                // dijkstra(rtIdx, location, curMission.endIndex, wb[curMission.endIndex].location);
-                // if (pathLength[rtIdx][curMission.endIndex] < 0) {
-                    // //等待
-                    // break;
-                // }
-                // if (compress(rtIdx, location, curMission.endIndex, wb[curMission.endIndex].location, 0, 1)) {
-                    // success = true;
-                    // releaseLock(curTask.destCo);
-                    // break;
-                // }
-            // }
-        // } else {
-            // 分配新任务
-            std::vector<mission> msNode; // 任务节点
-            // clock_t start = clock();
-            dijkstra(rtIdx, location, true);
-            // clock_t end = clock();
-            // cerr << "Frame: " << frameID << " dijkstra all workbench cost" << end-start << endl;
-            findMission(msNode, location, lsp);
+        // 分配新任务
+        std::vector<mission> msNode; // 任务节点
+        // clock_t start = clock();
+        dijkstra(rtIdx, location, true);
+        // clock_t end = clock();
+        // cerr << "Frame: " << frameID << " dijkstra all workbench cost" << end-start << endl;
+        findMission(msNode, location, lsp);
 
-            for (int i = 0; i < msNode.size(); ++i) {
-                mission selected = msNode[i];
-                // 预计到达生产工作台时已有产品生成且预计任务能在第9000帧之前完成才接单
-                // cerr << "robot" << rtIdx << ": " << frameID << "   " << selected.estFrame + frameID << endl;
-                #ifdef ESTIMATE
-                if ((wb[selected.startIndex].pstatus || selected.estFrame >= wb[selected.startIndex].rtime) && (selected.estFrame + frameID < 9000)) {
-                #else
-                if (wb[selected.startIndex].pstatus && (selected.estFrame + frameID < 15000)) {
-                #endif
-                    // cerr << "new Mission: Frame" << frameID << ":(robot" << rtIdx << ") " << selected.startIndex << "->" << selected.endIndex << endl;
-                    // if (compress(rtIdx, location, selected.startIndex, wb[selected.startIndex].location, 1, 0)) {
-                        compress(rtIdx, location, selected.startIndex, wb[selected.startIndex].location, selected.endIndex, wb[selected.endIndex].location);
-                        wb[selected.startIndex].reachable = false;    // 该生产工作台不可达
-                        wb[selected.endIndex].setProType(selected.proType);
-                        curMission = selected;
-                        success = true;
-                        // releaseLock(curTask.destCo);
-                        break;
-                    // }
+        for (int i = 0; i < msNode.size(); ++i) {
+            mission selected = msNode[i];
+            // 预计到达生产工作台时已有产品生成且预计任务能在第9000帧之前完成才接单
+            // cerr << "robot" << rtIdx << ": " << frameID << "   " << selected.estFrame + frameID << endl;
+            #ifdef ESTIMATE
+            if ((wb[selected.startIndex].pstatus || selected.estFrame >= wb[selected.startIndex].rtime) && (selected.estFrame + frameID < 9000)) {
+            #else
+            if (wb[selected.startIndex].pstatus && (selected.estFrame + frameID < 15000)) {
+            #endif
+                // cerr << "new Mission: Frame" << frameID << ":(robot" << rtIdx << ") " << selected.startIndex << "->" << selected.endIndex << endl;
+                if (compress(rtIdx, location, selected.startIndex, wb[selected.startIndex].location, selected.endIndex, wb[selected.endIndex].location)) {
+                    wb[selected.startIndex].reachable = false;    // 该生产工作台不可达
+                    wb[selected.endIndex].setProType(selected.proType);
+                    curMission = selected;
+                    success = true;
+                    break;
                 }
             }
-        // }
+        }
         if (!success) {
             if (K==25 || K == 18) setSpeed(curFlow.preDestion[this->rtIdx]);
             return;

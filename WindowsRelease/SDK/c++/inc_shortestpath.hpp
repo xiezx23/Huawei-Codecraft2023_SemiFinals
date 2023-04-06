@@ -31,7 +31,7 @@ void dijkstra(int idx, coordinate2 src, bool flag);
 void dijkstra(int idx, coordinate2 src, int wbIdx, coordinate2 dest, bool flag);
 
 // 机器人rtidx调用dijkstra后，将从当前位置到生产工作台，及从生产工作台到消费工作台的最短路进行压缩，并加入任务队列
-void compress(int rtIdx, coordinate2 src, int startIdx, coordinate2 dest1, int endIdx, coordinate2 dest2);
+bool compress(int rtIdx, coordinate2 src, int startIdx, coordinate2 dest1, int endIdx, coordinate2 dest2);
 // 比较方向
 inline void cmpdir(coordinate2& dir, const coordinate2& c1, const coordinate2& c2); 
 
