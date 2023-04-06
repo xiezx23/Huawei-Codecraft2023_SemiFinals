@@ -14,6 +14,7 @@
 #include "inc_shortestpath.hpp"
 #include "inc_threadpool.hpp"
 #include "inc_pathlock.hpp"
+#include "inc_route_correction.hpp"
 using namespace std;
 
 extern int K;                               // 工作台数

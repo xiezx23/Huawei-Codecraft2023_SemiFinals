@@ -15,29 +15,44 @@ const double dt = 0.02;         // 帧长度
 double dwa_para1 = -100;        // 势能分量系数
 // double dwa_para2 = 0;        // 目标角度系数
 // double dwa_para3 = 0;        // 有效速度系数
-double dwa_para2 = 10;           // 目标角度系数
-double dwa_para3 = 1;           // 有效速度系数
-double dwa_para4 = -5;
+double dwa_para2 = 30;          // 目标角度系数
+double dwa_para3 = 2;          // 有效速度系数
+double dwa_para4 = -10;        // 对墙壁的敏感度
 
 double recordData[2*dwaM][2*dwaM][4];
 double recordSum[4];
 
+void setPara(int rtIdx) {
+    robot& rbt = rt[rtIdx];
+    coordinate& dest = rbt.haveTemDest ? rbt.temDest : rbt.curTask.destCo;
+    vec p2d(dest.x - rbt.location.x, dest.y - rbt.location.y);
+    double angle = cntAngle(rbt.lsp, p2d);
+    if (angle >= PI / 10) {
+        dwa_para2 = 100;
+        dwa_para3 = 0.5;
+    }
+    else {
+        dwa_para2 = 10;
+        dwa_para3 = 5;
+    }
+}
+
 bool checkPosion(int rtIdx, double x, double y) {
     // 如果会碰墙就返回true
-    robot& rbt = rt[rtIdx];
-    coordinate position(x, y);
-    double robotRadius = 0.45;  // the radius of robot
-    if (rbt.pd_id) {
-        robotRadius = 0.53;     // the radius when carrying products
-    }
-    robotRadius += 0.02;
-    // check distence from robot to the wall
-    if (fabs(position.x) <= robotRadius || fabs(position.x - 50.0) <= robotRadius) {
-        return true;
-    }
-    else if (fabs(position.y) <= robotRadius || fabs(position.y - 50.0) <= robotRadius) {
-        return true;
-    }
+    // robot& rbt = rt[rtIdx];
+    // coordinate position(x, y);
+    // double robotRadius = 0.45;  // the radius of robot
+    // if (rbt.pd_id) {
+    //     robotRadius = 0.53;     // the radius when carrying products
+    // }
+    // robotRadius += 0.02;
+    // // check distence from robot to the wall
+    // if (fabs(position.x) <= robotRadius || fabs(position.x - 50.0) <= robotRadius) {
+    //     return true;
+    // }
+    // else if (fabs(position.y) <= robotRadius || fabs(position.y - 50.0) <= robotRadius) {
+    //     return true;
+    // }
     return false;
 }
 
@@ -125,18 +140,7 @@ void motionEvaluate(coordinate position,int rtIdx,vec speed, int vidx, int aidx)
 }
 
 vec motionPredict(int rtIdx) {
-    robot& rbt = rt[rtIdx];
-    coordinate& dest = rbt.haveTemDest ? rbt.temDest : rbt.curTask.destCo;
-    vec p2d(dest.x - rbt.location.x, dest.y - rbt.location.y);
-    double angle = cntAngle(rbt.lsp, p2d);
-    if (angle >= PI / 8) {
-        dwa_para2 = 100;
-        dwa_para3 = 0;
-    }
-    else {
-        dwa_para2 = 1;
-        dwa_para3 = 2;
-    }
+    setPara(rtIdx);
     cleanData();
     const double eps = 1e-9;
     // 获取机器人最大加速度
@@ -176,7 +180,7 @@ vec motionPredict(int rtIdx) {
                 tmpy -= -v1/w1 * (cos(tmpToward) - cos(nextToward));
             }
             w1 += dda, v1 += ddv, tmpToward = nextToward;
-            v1 = min(0.75, max(-2.0, v1));
+            v1 = min(4.0, max(-2.0, v1));
             w1 = min(PI, max(-PI, w1));
             // if (checkPosion(rtIdx, tmpx, tmpy) && cntWall(rtIdx, coordinate(tmpx, tmpy)) > 1) {
             if (checkPosion(rtIdx, tmpx, tmpy)) {
@@ -196,7 +200,7 @@ vec motionPredict(int rtIdx) {
     leftasp = curAsp + left * da;
     while (leftasp <= -PI - eps) leftasp += da, ++left;
     {
-        tmpLineSpeed = max(-2.0,min(0.75,curLineSpeed));
+        tmpLineSpeed = max(-2.0,min(4.0,curLineSpeed));
         tmpasp = min(leftasp,PI);
         for (int j = left; j < dwaM; j++, tmpasp += da) {
             if (tmpasp > PI + eps) break;
@@ -207,7 +211,7 @@ vec motionPredict(int rtIdx) {
     while (tmpLineSpeed <= offest - eps) tmpLineSpeed += dv, ++i;
     lefti = i;
     for (; i < dwaM; i++,tmpLineSpeed += dv) {
-        if (tmpLineSpeed > 0.75 + eps) break;
+        if (tmpLineSpeed > 4.0 + eps) break;
         tmpasp = leftasp;
         for (int j = left; j < dwaM; j++, tmpasp += da) {
             if (tmpasp > PI + eps) break;
@@ -220,7 +224,7 @@ vec motionPredict(int rtIdx) {
         if (value >= score - eps) score = value, best.set(tmpLineSpeed,tmpasp);
     };
     {
-        tmpLineSpeed = max(-2.0,min(0.75,curLineSpeed));
+        tmpLineSpeed = max(-2.0,min(4.0,curLineSpeed));
         tmpasp = min(leftasp,PI);
         for (int j = left; j < dwaM; j++, tmpasp += da) {
             if (tmpasp > PI + eps) break;
@@ -229,7 +233,7 @@ vec motionPredict(int rtIdx) {
     }
     i = lefti, tmpLineSpeed = curLineSpeed + i * dv;
     for (; i < dwaM; i++,tmpLineSpeed += dv) {
-        if (tmpLineSpeed > 0.75 + eps) break;
+        if (tmpLineSpeed > 4.0 + eps) break;
         tmpasp = leftasp;
         for (int j = left; j < dwaM; j++, tmpasp += da) {
             if (tmpasp > PI + eps) break;
