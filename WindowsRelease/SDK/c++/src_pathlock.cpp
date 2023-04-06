@@ -42,8 +42,16 @@ void pathlock_init() {
             for (int j = 0; j <= MAP_SIZE + 1; j++)  
                 pathdetect_f[i * (MAP_SIZE + 2) + j] = -1;
 
+    
     // 地图比例尺一格0.5m, 机器人半径0.53m，
     auto rLabel = [](double r, char c){
+
+        auto setC = [&](int i, int j) {
+            if (resolve_plat[i][j] == '.') {
+                resolve_plat[i][j] = c;
+            }
+        };
+
         r += 0.25;
         // 若两个#间距小于2r，则将连线上的.标记成c
         r *= 2;
@@ -61,36 +69,28 @@ void pathlock_init() {
                                 if (sqrt(di * di + dj * dj) <= 2 * r) {
                                     if (!di) {
                                         for (int k = j + 1; k < j + dj; k++) {
-                                            if (resolve_plat[i][k] == '.') {
-                                                resolve_plat[i][k] = c;
-                                            }
+                                            setC(i,k);
                                         }
                                         for (int k = j + dj; k < j; k++) {
-                                            if (resolve_plat[i][k] == '.') {
-                                                resolve_plat[i][k] = c;
-                                            }
+                                            setC(i,k);
                                         }
                                     } else if(!dj) {
                                         for (int k = i + 1; k < i + di; k++) {
-                                            if (resolve_plat[k][j] == '.') {
-                                                resolve_plat[k][j] = c;
-                                            }
+                                            setC(k,j);
                                         }
                                     } else if(di == 2 && abs(dj) == 2) {
-                                        if (resolve_plat[i + 1][j + dj/2] == '.') {
-                                            resolve_plat[i + 1][j + dj/2] = c;
-                                        }
+                                        setC(i + 1, j + dj/2);
                                     } 
-                                    // else if(di + abs(dj) == 5) {
-                                    //     int sgnj = dj/abs(dj);
-                                    //     if (di == 2) {
-                                    //         resolve_plat[i + 1][j + sgnj] = c;
-                                    //         resolve_plat[i + 1][j + sgnj * 2] = c;
-                                    //     } else {
-                                    //         resolve_plat[i + 1][j + sgnj] = c;
-                                    //         resolve_plat[i + 2][j + sgnj] = c;
-                                    //     }
-                                    // }
+                                    else if(di + abs(dj) == 5) {
+                                        int sgnj = dj/abs(dj);
+                                        if (di == 2) {
+                                            setC(i + 1, j + sgnj);
+                                            setC(i + 1, j + sgnj * 2);
+                                        } else {
+                                            setC(i + 1, j + sgnj);
+                                            setC(i + 2, j + sgnj);
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -100,12 +100,38 @@ void pathlock_init() {
         }
     };
 
-    rLabel(0.99,'2');
-    rLabel(0.47,'1');
+    // 将所有中心位置与墙壁的距离不大于r的离散坐标标记为c
+    //auto rLabel2 = [](double r, char c){
+    //    double boundary = ((r + 0.25) * 2);
+    //    const int dM = ceil(boundary);   
+    //    boundary = boundary * boundary;     
+    //    for (int i = 0; i <= MAP_SIZE + 1; ++i) {
+    //        for (int j = 0; j <= MAP_SIZE + 1; ++j) {
+    //            if (resolve_plat[i][j] == '#') {
+    //                for (int di = -dM; di <= dM; ++di) {
+    //                    if (i+di < 1 || i+di > MAP_SIZE) continue;
+    //                    for (int dj = -dM; dj <= dM; ++dj) {
+    //                        if (j+dj < 1 || j+dj > MAP_SIZE) continue;
+    //                        if (resolve_plat[i+di][j+dj] == '.') {
+    //                            if (di * di + dj * dj <= boundary) {
+    //                                resolve_plat[i+di][j+dj] = c;
+    //                            }
+    //                        }
+    //                    }
+    //                }
+    //            }
+    //        }
+    //    }
+    //};
+
+    // 任何机器人无法通过
+    rLabel(0.45, '1');    
+    // 单行道
+    rLabel(0.99, '2');
 
     // 合并字符为'2'的连通域，并用a-z标记
-    for (int i = 0; i <= MAP_SIZE + 1; i++) {
-        for (int j = 0; j <= MAP_SIZE + 1; j++) {
+    for (int i = 1; i <= MAP_SIZE + 1; i++) {
+        for (int j = 1; j <= MAP_SIZE + 1; j++) {
             if (resolve_plat[i][j] == '2') {
                 int pos = i * (MAP_SIZE + 2) + j;
                 int fa = pathdetect_find(pos);
@@ -139,6 +165,9 @@ void pathlock_init() {
     #ifdef PATH_DEBUG
     fprintf(stderr,"lockCnt : %d\n", lockCnt);
     #endif
+
+    // 仅允许不携带物品的机器人通过
+    rLabel2(0.53, '3');
 }
 
 // 输出处理后的地图
@@ -151,7 +180,7 @@ void printMap() {
     for (int j = MAP_SIZE - 1; j + 1; --j) {
         for (int i = 0; i < MAP_SIZE; i++) {
             if (lockID[i][j]) fprintf(stderr,"%c", ma[lockID[i][j]%52]);
-            else fprintf(stderr,"%c", (resolve_plat[i+1][j+1] == '#')?'#':'.');
+            else fprintf(stderr,"%c", resolve_plat[i+1][j+1]);
         }
         cerr<<endl;
     }
@@ -165,7 +194,7 @@ void pathlock_release(int rtidx, int x, int y) {
     fprintf(stderr,"release curframeID : %d lockID : %d,robot : %d lockStatus : %d robotStatus : %d\n", frameID, id, rtidx, lockStatus[id], robotStatus[rtidx][id]);
     #endif
 
-    if(!--robotStatus[rtidx][id]) ++lockStatus[id];
+    if (robotStatus[rtidx][id]) if(!--robotStatus[rtidx][id]) ++lockStatus[id];
 }
 
 // 获取锁
@@ -193,4 +222,39 @@ bool pathlock_isReachable(int rtidx, int x, int y) {
 // 获取锁类型
 int pathlock_type(int x,int y) {
     return lockID[x][y];
+}
+
+// 释放锁
+void pathlock_release(int rtidx, const coordinate2 &pos) {
+    return pathlock_release(rtidx, pos.x, pos.y);
+}
+
+// 获取锁
+bool pathlock_acquire(int rtidx, const coordinate2 &pos) {
+    return pathlock_acquire(rtidx, pos.x, pos.y);
+}
+
+// 判断节点是否可经过
+bool pathlock_isReachable(int rtidx, const coordinate2 &pos) {
+    return pathlock_isReachable(rtidx, pos.x, pos.y);
+}
+
+// 获取锁类型
+int pathlock_type(const coordinate2 &pos) {
+    return pathlock_type(pos.x, pos.y);
+}
+
+// 查询指定点的上锁情况
+void pathlock_getStatus(const coordinate2 &pos) {
+    pathlock_getStatus(pos.x, pos.y);
+}
+
+// 查询指定点的上锁情况
+void pathlock_getStatus(int x, int y) {
+    fprintf(stderr,"lock_Status frameId : %d lock_Id : %d pos : (%d,%d) lockStatus : %d\n", frameID,lockID[x][y], x, y, lockStatus[lockID[x][y]]);
+    for(int i = 0; i < ROBOT_SIZE; i++) {
+        coordinate2 pos = rt[i].location;
+        fprintf(stderr,"\trobot %d : %d %d %d\n", i, robotStatus[i][lockID[x][y]],pos.x, pos.y);
+    }
+    fprintf(stderr,"\n");
 }
