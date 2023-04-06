@@ -42,8 +42,16 @@ void pathlock_init() {
             for (int j = 0; j <= MAP_SIZE + 1; j++)  
                 pathdetect_f[i * (MAP_SIZE + 2) + j] = -1;
 
+    
     // 地图比例尺一格0.5m, 机器人半径0.53m，
     auto rLabel = [](double r, char c){
+
+        auto setC = [&](int i, int j) {
+            if (resolve_plat[i][j] == '.') {
+                resolve_plat[i][j] = c;
+            }
+        };
+
         r += 0.25;
         // 若两个#间距小于2r，则将连线上的.标记成c
         r *= 2;
@@ -61,36 +69,28 @@ void pathlock_init() {
                                 if (sqrt(di * di + dj * dj) <= 2 * r) {
                                     if (!di) {
                                         for (int k = j + 1; k < j + dj; k++) {
-                                            if (resolve_plat[i][k] == '.') {
-                                                resolve_plat[i][k] = c;
-                                            }
+                                            setC(i,k);
                                         }
                                         for (int k = j + dj; k < j; k++) {
-                                            if (resolve_plat[i][k] == '.') {
-                                                resolve_plat[i][k] = c;
-                                            }
+                                            setC(i,k);
                                         }
                                     } else if(!dj) {
                                         for (int k = i + 1; k < i + di; k++) {
-                                            if (resolve_plat[k][j] == '.') {
-                                                resolve_plat[k][j] = c;
-                                            }
+                                            setC(k,j);
                                         }
                                     } else if(di == 2 && abs(dj) == 2) {
-                                        if (resolve_plat[i + 1][j + dj/2] == '.') {
-                                            resolve_plat[i + 1][j + dj/2] = c;
-                                        }
+                                        setC(i + 1, j + dj/2);
                                     } 
-                                    // else if(di + abs(dj) == 5) {
-                                    //     int sgnj = dj/abs(dj);
-                                    //     if (di == 2) {
-                                    //         resolve_plat[i + 1][j + sgnj] = c;
-                                    //         resolve_plat[i + 1][j + sgnj * 2] = c;
-                                    //     } else {
-                                    //         resolve_plat[i + 1][j + sgnj] = c;
-                                    //         resolve_plat[i + 2][j + sgnj] = c;
-                                    //     }
-                                    // }
+                                    else if(di + abs(dj) == 5) {
+                                        int sgnj = dj/abs(dj);
+                                        if (di == 2) {
+                                            setC(i + 1, j + sgnj);
+                                            setC(i + 1, j + sgnj * 2);
+                                        } else {
+                                            setC(i + 1, j + sgnj);
+                                            setC(i + 2, j + sgnj);
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -100,8 +100,8 @@ void pathlock_init() {
         }
     };
 
-    rLabel(0.99,'2');
     rLabel(0.47,'1');
+    rLabel(0.99,'2');
 
     // 合并字符为'2'的连通域，并用a-z标记
     for (int i = 0; i <= MAP_SIZE + 1; i++) {
@@ -151,7 +151,7 @@ void printMap() {
     for (int j = MAP_SIZE - 1; j + 1; --j) {
         for (int i = 0; i < MAP_SIZE; i++) {
             if (lockID[i][j]) fprintf(stderr,"%c", ma[lockID[i][j]%52]);
-            else fprintf(stderr,"%c", (resolve_plat[i+1][j+1] == '#')?'#':'.');
+            else fprintf(stderr,"%c", resolve_plat[i+1][j+1]);
         }
         cerr<<endl;
     }
