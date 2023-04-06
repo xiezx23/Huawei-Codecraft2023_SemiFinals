@@ -124,6 +124,7 @@ void dijkstra(int idx, coordinate2 src, bool flag) {
                 // if (plat[i][j] == '#') continue;
                 if (resolve_plat[i+1][j+1] == '#') continue;
                 if (resolve_plat[i+1][j+1] == '1') continue;
+                if (!flag && resolve_plat[i+1][j+1] == '3') continue;
                 // if (flag && !pathlock_isReachable(idx,i,j)) continue;
                 if (visited[i][j])  continue;
                 precessor[i][j].set(x, y);
@@ -177,6 +178,7 @@ void dijkstra(int idx, coordinate2 src, int wbIdx, coordinate2 dest, bool flag) 
                 // if (plat[i][j] == '#') continue;
                 if (resolve_plat[i+1][j+1] == '#') continue;
                 if (resolve_plat[i+1][j+1] == '1') continue;
+                if (resolve_plat[i+1][j+1] == '3') continue;
                 // if (flag && !pathlock_isReachable(idx,i,j)) continue;
                 if (visited[i][j])  continue;
                 precessor[i][j].set(x, y);
@@ -199,7 +201,7 @@ void dijkstra(int idx, coordinate2 src, int wbIdx, coordinate2 dest, bool flag) 
 bool compress(int rtIdx, coordinate2 src, int startIdx, coordinate2 dest1, int endIdx, coordinate2 dest2) {
     robot& r = rt[rtIdx]; 
     while (!r.taskQueue.empty()) r.taskQueue.pop();
-    // cerr << "new Task: Frame" << frameID << " robot" << rtidx << " -> " << wbidx << endl;
+    // cerr << "new Task: Frame" << frameID << " robot" << rtIdx << startIdx << " -> " << wbidx << endl;
 
     stack<coordinate2> s1, s2;
     coordinate2 diff, prediff(-2,-2);

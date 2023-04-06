@@ -100,8 +100,34 @@ void pathlock_init() {
         }
     };
 
-    rLabel(0.99,'2');
-    rLabel(0.47,'1');
+    // 将所有中心位置与墙壁的距离不大于r的离散坐标标记为c
+    auto rLabel2 = [](double r, char c){
+        double boundary = ((r + 0.25) * 2);
+        const int dM = ceil(boundary);   
+        boundary = boundary * boundary;     
+        for (int i = 0; i <= MAP_SIZE + 1; ++i) {
+            for (int j = 0; j <= MAP_SIZE + 1; ++j) {
+                if (resolve_plat[i][j] == '#') {
+                    for (int di = -dM; di <= dM; ++di) {
+                        if (i+di < 1 || i+di > MAP_SIZE) continue;
+                        for (int dj = -dM; dj <= dM; ++dj) {
+                            if (j+dj < 1 || j+dj > MAP_SIZE) continue;
+                            if (resolve_plat[i+di][j+dj] == '.') {
+                                if (di * di + dj * dj <= boundary) {
+                                    resolve_plat[i+di][j+dj] = c;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    };
+
+    // 单行道
+    rLabel(0.99, '2');
+    // 任何机器人无法通过
+    rLabel(0.45, '1');    
 
     // 合并字符为'2'的连通域，并用a-z标记
     for (int i = 0; i <= MAP_SIZE + 1; i++) {
@@ -139,6 +165,9 @@ void pathlock_init() {
     #ifdef PATH_DEBUG
     fprintf(stderr,"lockCnt : %d\n", lockCnt);
     #endif
+
+    // 仅允许不携带物品的机器人通过
+    rLabel2(0.53, '3');
 }
 
 // 输出处理后的地图
@@ -150,8 +179,12 @@ void printMap() {
     // 输出处理后的地图
     for (int j = MAP_SIZE - 1; j + 1; --j) {
         for (int i = 0; i < MAP_SIZE; i++) {
-            if (lockID[i][j]) fprintf(stderr,"%c", ma[lockID[i][j]%52]);
-            else fprintf(stderr,"%c", (resolve_plat[i+1][j+1] == '#')?'#':'.');
+            if (lockID[i][j]) {
+                fprintf(stderr,"%c", ma[lockID[i][j]%52]);
+            }
+            else {
+                fprintf(stderr,"%c", resolve_plat[i+1][j+1]);
+            } 
         }
         cerr<<endl;
     }
