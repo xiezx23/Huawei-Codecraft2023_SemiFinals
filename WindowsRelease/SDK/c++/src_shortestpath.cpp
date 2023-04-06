@@ -100,6 +100,10 @@ void dijkstra(int idx, coordinate2 src, bool flag) {
     if (flag) {
         if (robotCoordinate[idx] == src) return;
         robotCoordinate[idx] = src;
+        // 原最短路无效
+        for (int j = 0; j < WORKBENCH_SIZE; j++) {
+            rtPathLength[idx][j] = inf;
+        }
     }
     // cerr << "enter buy dijkstra: Frame" << frameID << " robot" << rtidx << endl;
 
@@ -155,6 +159,10 @@ void dijkstra(int idx, coordinate2 src, int wbIdx, coordinate2 dest, bool flag) 
     if (flag) {
         if (robotCoordinate[idx] == src) return;
         robotCoordinate[idx] = src;
+        // 原最短路无效
+        for (int j = 0; j < WORKBENCH_SIZE; j++) {
+            rtPathLength[idx][j] = inf;
+        }
     }
     // cerr << "enter sell dijkstra: Frame" << frameID << " robot" << rtidx << " -> " << wbidx << endl;
 
