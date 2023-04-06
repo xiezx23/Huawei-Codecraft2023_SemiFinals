@@ -80,10 +80,6 @@ void robot::checkDest() {
 
 // 检查任务队列情况
 void robot::checkTask() {
-    auto releaseLock = [&](const coordinate2 & t) {
-        std::unique_lock<std::mutex> lock(path_mutex);
-        pathlock_release(rtIdx, t);
-    };
 
     if (taskQueue.empty()) {
         bool success = false;

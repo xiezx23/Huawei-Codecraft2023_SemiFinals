@@ -104,8 +104,8 @@ void pathlock_init() {
     rLabel(0.99,'2');
 
     // 合并字符为'2'的连通域，并用a-z标记
-    for (int i = 0; i <= MAP_SIZE + 1; i++) {
-        for (int j = 0; j <= MAP_SIZE + 1; j++) {
+    for (int i = 1; i <= MAP_SIZE + 1; i++) {
+        for (int j = 1; j <= MAP_SIZE + 1; j++) {
             if (resolve_plat[i][j] == '2') {
                 int pos = i * (MAP_SIZE + 2) + j;
                 int fa = pathdetect_find(pos);
@@ -213,4 +213,19 @@ bool pathlock_isReachable(int rtidx, const coordinate2 &pos) {
 // 获取锁类型
 int pathlock_type(const coordinate2 &pos) {
     return pathlock_type(pos.x, pos.y);
+}
+
+// 查询指定点的上锁情况
+void pathlock_getStatus(const coordinate2 &pos) {
+    pathlock_getStatus(pos.x, pos.y);
+}
+
+// 查询指定点的上锁情况
+void pathlock_getStatus(int x, int y) {
+    fprintf(stderr,"lock_Status frameId : %d lock_Id : %d pos : (%d,%d) lockStatus : %d\n", frameID,lockID[x][y], x, y, lockStatus[lockID[x][y]]);
+    for(int i = 0; i < ROBOT_SIZE; i++) {
+        coordinate2 pos = rt[i].location;
+        fprintf(stderr,"\trobot %d : %d %d %d\n", i, robotStatus[i][lockID[x][y]],pos.x, pos.y);
+    }
+    fprintf(stderr,"\n");
 }

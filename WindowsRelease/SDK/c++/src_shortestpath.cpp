@@ -124,7 +124,7 @@ void dijkstra(int idx, coordinate2 src, bool flag) {
                 // if (plat[i][j] == '#') continue;
                 if (resolve_plat[i+1][j+1] == '#') continue;
                 if (resolve_plat[i+1][j+1] == '1') continue;
-                // if (flag && !pathlock_isReachable(idx,i,j)) continue;
+                if (flag && !pathlock_isReachable(idx,i,j)) continue;
                 if (visited[i][j])  continue;
                 precessor[i][j].set(x, y);
                 coordinate2 dest(i, j);
@@ -177,7 +177,7 @@ void dijkstra(int idx, coordinate2 src, int wbIdx, coordinate2 dest, bool flag) 
                 // if (plat[i][j] == '#') continue;
                 if (resolve_plat[i+1][j+1] == '#') continue;
                 if (resolve_plat[i+1][j+1] == '1') continue;
-                // if (flag && !pathlock_isReachable(idx,i,j)) continue;
+                if (flag && !pathlock_isReachable(idx,i,j)) continue;
                 if (visited[i][j])  continue;
                 precessor[i][j].set(x, y);
                 coordinate2 c(i, j);
