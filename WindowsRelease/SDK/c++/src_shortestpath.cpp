@@ -66,6 +66,10 @@ void initWeight() {
             }
         }
     }
+    for (int k = 0; k < K; ++k) {
+        coordinate2 wbLoca(wb[k].location);
+        posiWeight[wbLoca.x][wbLoca.y] = 1;
+    }
 }
 
 // 预处理，对点的可达性做判断
@@ -77,26 +81,48 @@ void initAccessibility() {
 
             coordinate cur = pointCorrection(coordinate2(i, j));
             double distance;
-            for (int di = -1; di <= 1; ++di) {
+            const int bias = 2;
+            for (int di = -bias; di <= bias; ++di) {
                 if (i+di+1 < 0 || i+di+1 > MAP_SIZE+1) continue;
-                for (int dj = -1; dj <= 1; ++dj) {
+                for (int dj = -bias; dj <= bias; ++dj) {
                     if (!di && !dj) continue;
                     if (j+dj+1 < 0 || j+dj+1 > MAP_SIZE+1) continue;
                     if (resolve_plat[i+di+1][j+dj+1] != '#') continue;
+                    double delta_d = sqrt(di*di + dj*dj)/max(fabs(di), fabs(dj));
                     coordinate wall = coordinate2(i+di, j+dj);
                     distance = dis(cur, wall);
-                    if (distance < 0.45 + 0.26) {
+                    if (distance <= 0.45 + 0.25*delta_d) {
                         resolve_plat[i+1][j+1] = '1';
-                        di = 2;
+                        di = bias + 1;
                         break;
                     }
-                    else if (distance < 0.53 + 0.26) {
+                    else if (distance <= 0.53 + 0.25*delta_d) {
                         resolve_plat[i+1][j+1] = '3';
                     }
                 }
             }
         }
     }
+
+    for (int k = 0; k < K; ++k) {
+        coordinate2 c = wb[k].location;        
+        int i = c.x, j = c.y;
+        if (resolve_plat[i+1][j+1] == '1') {
+            for (int di = -1; di <= 1; ++di) {
+                if (i+di+1 < 0 || i+di+1 > MAP_SIZE+1) continue;
+                for (int dj = -1; dj <= 1; ++dj) {
+                    if (!di && !dj) continue;
+                    if (j+dj+1 < 0 || j+dj+1 > MAP_SIZE+1) continue;
+                    if (resolve_plat[i+di+1][j+dj+1] != '#' && resolve_plat[i+di+1][j+dj+1] != '1') {
+                        resolve_plat[i+1][j+1] = '3';
+                        di = 2;
+                        break;
+                    }             
+                }
+            }
+        }
+    }
+    
 }
 
 // 预处理，计算从机器人及工作台到所有工作台的最短路

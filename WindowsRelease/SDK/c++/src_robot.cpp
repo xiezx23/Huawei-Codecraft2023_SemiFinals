@@ -61,6 +61,7 @@ void robot::checkDest() {
             if (curTask.buy && wb[wb_id].pstatus) {
                 // 到达生产工作台
                 cmd.buy = true;
+                wb[wb_id].pstatus = false;
                 wb[wb_id].reachable = true;     // 该生产工作台可达
                 releaseLock(curTask.destCo);
                 taskQueue.pop();                

@@ -48,8 +48,8 @@ void ori_solution() {
         rtIdxArr[rtIdx] = rtIdx;
         tp->addWork(&robotWork, (void*)&rtIdxArr[rtIdx]);
     }
-    // collitionAvoidance();
     tp->waitFinish();
+    // collitionAvoidance();
     // 碰撞避免
     // ori_collitionAvoidance(); 
 
