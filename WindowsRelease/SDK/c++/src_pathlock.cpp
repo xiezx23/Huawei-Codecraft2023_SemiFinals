@@ -198,7 +198,7 @@ void pathlock_release(int rtidx, int x, int y) {
     fprintf(stderr,"release curframeID : %d lockID : %d,robot : %d lockStatus : %d robotStatus : %d\n", frameID, id, rtidx, lockStatus[id], robotStatus[rtidx][id]);
     #endif
 
-    if(!--robotStatus[rtidx][id]) ++lockStatus[id];
+    if (robotStatus[rtidx][id]) if(!--robotStatus[rtidx][id]) ++lockStatus[id];
 }
 
 // 获取锁
@@ -226,4 +226,24 @@ bool pathlock_isReachable(int rtidx, int x, int y) {
 // 获取锁类型
 int pathlock_type(int x,int y) {
     return lockID[x][y];
+}
+
+// 释放锁
+void pathlock_release(int rtidx, const coordinate2 &pos) {
+    return pathlock_release(rtidx, pos.x, pos.y);
+}
+
+// 获取锁
+bool pathlock_acquire(int rtidx, const coordinate2 &pos) {
+    return pathlock_acquire(rtidx, pos.x, pos.y);
+}
+
+// 判断节点是否可经过
+bool pathlock_isReachable(int rtidx, const coordinate2 &pos) {
+    return pathlock_isReachable(rtidx, pos.x, pos.y);
+}
+
+// 获取锁类型
+int pathlock_type(const coordinate2 &pos) {
+    return pathlock_type(pos.x, pos.y);
 }

@@ -26,6 +26,18 @@ bool pathlock_isReachable(int rtidx, int x, int y);
 // 获取锁类型
 int pathlock_type(int x,int y);
 
+// 释放锁
+void pathlock_release(int rtidx, const coordinate2 &pos);
+
+// 获取锁
+bool pathlock_acquire(int rtidx, const coordinate2 &pos);
+
+// 判断节点是否可经过
+bool pathlock_isReachable(int rtidx, const coordinate2 &pos);
+
+// 获取锁类型
+int pathlock_type(const coordinate2 &pos);
+
 // 对机器人当前任务路径上的所有点上锁
 bool lockPath(int rtidx);
 
