@@ -30,8 +30,9 @@ void ori_solution() {
             wb[tmp.endIndex].setProType(tmp.proType);
         }
         // 锁上当前位置(串行执行，不额外加锁)
-        pathlock_release(rtIdx, rt[rtIdx].location);
+        pathlock_acquire(rtIdx, rt[rtIdx].location);
     }
+    // pathlock_getStatus(57,46);
     // 指令规划
     // for (int rtIdx = 0; rtIdx < ROBOT_SIZE; ++rtIdx) {        
     //     // if (rt[rtIdx].holdTime) --rt[rtIdx].holdTime;
@@ -52,9 +53,11 @@ void ori_solution() {
     // 碰撞避免
     // ori_collitionAvoidance(); 
 
+    // pathlock_getStatus(57,46);
     for (int rtIdx = 0; rtIdx < ROBOT_SIZE; ++rtIdx) {
         // 释放当前位置的锁(串行执行，不额外加锁)
         pathlock_release(rtIdx, rt[rtIdx].location);
     }
+    // pathlock_getStatus(57,46);
     return;
 }

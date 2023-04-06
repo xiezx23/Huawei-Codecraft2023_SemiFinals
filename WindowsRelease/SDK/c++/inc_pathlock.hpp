@@ -38,7 +38,10 @@ bool pathlock_isReachable(int rtidx, const coordinate2 &pos);
 // 获取锁类型
 int pathlock_type(const coordinate2 &pos);
 
-// 对机器人当前任务路径上的所有点上锁
-bool lockPath(int rtidx);
+// 查询指定点的上锁情况
+void pathlock_getStatus(const coordinate2 &pos);
+
+// 查询指定点的上锁情况
+void pathlock_getStatus(int x, int y);
 
 #endif
