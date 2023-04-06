@@ -33,13 +33,13 @@ void pathlock_init() {
             resolve_plat[i + 1][j + 1] = plat[i][j] != '#'?'.':plat[i][j];
         }
     }
-    for (int i = 0; i < MAP_SIZE; i++) {
+    for (int i = 0; i < MAP_SIZE + 2; i++) {
         resolve_plat[i][0] = resolve_plat[i][MAP_SIZE + 1] = '#';
         resolve_plat[0][i] = resolve_plat[MAP_SIZE + 1][i] = '#';
     }
 
-    for (int i = 0; i <= MAP_SIZE + 1; i++) 
-            for (int j = 0; j <= MAP_SIZE + 1; j++)  
+    for (int i = 0; i < MAP_SIZE + 2; i++) 
+            for (int j = 0; j < MAP_SIZE + 2; j++)  
                 pathdetect_f[i * (MAP_SIZE + 2) + j] = -1;
 
     
@@ -56,14 +56,14 @@ void pathlock_init() {
         // 若两个#间距小于2r，则将连线上的.标记成c
         r *= 2;
         int dM = ceil(r/0.5);
-        for (int i = 0; i <= MAP_SIZE + 1; i++) {
-            for (int j = 0; j <= MAP_SIZE + 1; j++) {
+        for (int i = 0; i < MAP_SIZE + 2; i++) {
+            for (int j = 0; j < MAP_SIZE + 2; j++) {
                 if (resolve_plat[i][j] == '#') {
                     for (int di = 0; di <= dM; di++) {
                         if (i + di > MAP_SIZE + 1) break;
                         for (int dj = -dM; dj <= dM; dj++) {
                             if (j + dj > MAP_SIZE + 1) break;
-                            if (j + dj < 0) break;
+                            if (j + dj < 0) continue;
                             if (!di && !dj) continue;
                             if (resolve_plat[i + di][j + dj] == '#') {
                                 if (sqrt(di * di + dj * dj) <= 2 * r) {
