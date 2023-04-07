@@ -21,6 +21,11 @@ double rtPathLength[ROBOT_SIZE][WORKBENCH_SIZE];
 coordinate2 wbPrecessor[WORKBENCH_SIZE][MAP_SIZE][MAP_SIZE];   
 double wbPathLength[WORKBENCH_SIZE][WORKBENCH_SIZE]; 
 
+// 从机器人i到工作台k的最短路上所需转动角度的总和
+double rtAngleSum[ROBOT_SIZE][WORKBENCH_SIZE];
+// 从工作台i到工作台k的最短路上所需转动角度的总和
+double wbAngleSum[WORKBENCH_SIZE][WORKBENCH_SIZE];
+
 // 水平或直接相邻的距离及对角相邻的距离
 const double dis1 = 1, dis2 = sqrt(2);
 
@@ -76,11 +81,6 @@ void initAccessibility() {
             if (posiWeight[i][j] < 1.1) continue;
 
             coordinate cur = pointCorrection(coordinate2(i, j));
-            if (i == 56 && j == 46) {
-                coordinate oriCur(coordinate2(i, j));
-                cerr << oriCur.x << ' ' << oriCur.y << endl;
-                cerr << cur.x << ' ' << cur.y << endl;
-            }
             double distance;
             const int bias = 2;
             for (int di = -bias; di <= bias; ++di) {
@@ -286,10 +286,12 @@ bool compress(int rtIdx, coordinate2 src, int startIdx, coordinate2 dest1, int e
         if (diff == prediff && !pathlock_type(t2)) {
             s1.pop();
         }
-        prediff = diff;
+        else {
+            prediff = diff;
+        }        
         s1.push(t);
         swap(t,t2);
-        t = rtPrecessor[rtIdx][t.x][t.y];   
+        t = rtPrecessor[rtIdx][t2.x][t2.y];   
     }
     
     // 对去往消费工作台的最短路进行压缩
@@ -301,10 +303,12 @@ bool compress(int rtIdx, coordinate2 src, int startIdx, coordinate2 dest1, int e
         if (diff == prediff && !pathlock_type(t2)) {
             s2.pop();
         }
-        prediff = diff;
+        else { 
+            prediff = diff;
+        }
         s2.push(t);
         swap(t,t2);
-        t = wbPrecessor[startIdx][t.x][t.y];   
+        t = wbPrecessor[startIdx][t2.x][t2.y];   
     }
 
     // 加入任务队列
