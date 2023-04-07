@@ -27,11 +27,11 @@ struct coordinate2 {
     inline operator coordinate() const { return coordinate(x*0.5+0.25, y*0.5+0.25); }
 };
 
-struct node {
+struct dijkstraNode {
     double distance;
     coordinate2 coor;
-    node(double d, coordinate2 c): distance(d), coor(c) {}
-    inline bool operator>(const node& n) const {
+    dijkstraNode(double d, coordinate2 c): distance(d), coor(c) {}
+    inline bool operator>(const dijkstraNode& n) const {
         return distance > n.distance;
     }
 };

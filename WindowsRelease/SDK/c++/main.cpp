@@ -124,9 +124,11 @@ int main() {
         // curFlow.solution();
         /**************/
         for(int robotId = 0; robotId < ROBOT_SIZE; robotId++){  
-            // 各个机器人统计是否产生碰撞、购买、出售等行为       
+            // 各个机器人统计是否产生碰撞、购买、出售等行为   
+            #ifdef DEBUG    
             rt[robotId].collisionCount();
             rt[robotId].buysellCount();
+            #endif
             // 输出交互指令
             printRobotCommand(robotId);
         }

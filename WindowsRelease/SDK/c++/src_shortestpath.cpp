@@ -26,19 +26,16 @@ double rtAngleSum[ROBOT_SIZE][WORKBENCH_SIZE];
 // 从工作台i到工作台k的最短路上所需转动角度的总和
 double wbAngleSum[WORKBENCH_SIZE][WORKBENCH_SIZE];
 
+// 机器人到各离散点的距离
+double rtPointDis[ROBOT_SIZE][MAP_SIZE][MAP_SIZE];
+// 工作台到各离散点的距离
+double wbPointDis[WORKBENCH_SIZE][MAP_SIZE][MAP_SIZE];
+
 // 水平或直接相邻的距离及对角相邻的距离
 const double dis1 = 1, dis2 = sqrt(2);
 
 // 不可达标志
 const double inf = -1;
-
-// dijkstra算法优先队列中的结构，first为到源节点的距离，second为离散坐标
-typedef pair<double, coordinate2> dijkstraNode;
-struct cmp {
-    inline bool operator()(const dijkstraNode& op1, const dijkstraNode& op2) const {
-        return op1.first > op2.first;
-    }
-};
 
 // 加入位置权重
 double posiWeight[MAP_SIZE][MAP_SIZE];
@@ -166,11 +163,11 @@ void dijkstra(int idx, coordinate2 src, bool flag) {
     // cerr << "enter buy dijkstra: Frame" << frameID << " robot" << rtidx << endl;
 
     bool visited[MAP_SIZE][MAP_SIZE] = {0};
-    priority_queue<node, vector<node>, greater<node>> q;
+    priority_queue<dijkstraNode, vector<dijkstraNode>, greater<dijkstraNode>> q;
     coordinate2 (&precessor)[MAP_SIZE][MAP_SIZE] = flag ? rtPrecessor[idx] : wbPrecessor[idx];
     double (&pathLength)[WORKBENCH_SIZE] = flag ? rtPathLength[idx] : wbPathLength[idx];
 
-    q.push(node(0, src));
+    q.push(dijkstraNode(0, src));
     visited[src.x][src.y] = true;
     int findk = flag ? 0 : 1;
     while (!q.empty()) {
@@ -191,6 +188,8 @@ void dijkstra(int idx, coordinate2 src, bool flag) {
                 precessor[i][j].set(x, y);
                 coordinate2 dest(i, j);
                 double d = (abs(x-i)+abs(y-j)==1) ? dis+dis1*posiWeight[i][j]: dis+dis2*posiWeight[i][j];
+                if (flag) rtPointDis[idx][i][j] = d;
+                else wbPointDis[idx][i][j] = d;
                 if (workbenchCoordinate.count(dest)) {
                     // 当前坐标有工作台，更新最短路
                     ++findk;
@@ -202,7 +201,7 @@ void dijkstra(int idx, coordinate2 src, bool flag) {
                     }
                 }
                 visited[i][j] = true;
-                q.push(node(d, dest));           
+                q.push(dijkstraNode(d, dest));           
             }
         }
     }
@@ -229,11 +228,11 @@ void dijkstra(int idx, coordinate2 src, int wbIdx, coordinate2 dest, bool flag) 
     // cerr << "enter sell dijkstra: Frame" << frameID << " robot" << rtidx << " -> " << wbidx << endl;
 
     bool visited[MAP_SIZE][MAP_SIZE] = {0};
-    priority_queue<node, vector<node>, greater<node>> q;   
+    priority_queue<dijkstraNode, vector<dijkstraNode>, greater<dijkstraNode>> q;   
     coordinate2 (&precessor)[MAP_SIZE][MAP_SIZE] = flag ? rtPrecessor[idx] : wbPrecessor[idx];
-    double (&pathLength)[WORKBENCH_SIZE] = flag ? rtPathLength[idx] : wbPathLength[idx];                 
+    double (&pathLength)[WORKBENCH_SIZE] = flag ? rtPathLength[idx] : wbPathLength[idx];            
 
-    q.push(node(0, src));
+    q.push(dijkstraNode(0, src));
     visited[src.x][src.y] = true;
     while (!q.empty()) {
         int x = q.top().coor.x;
@@ -253,6 +252,8 @@ void dijkstra(int idx, coordinate2 src, int wbIdx, coordinate2 dest, bool flag) 
                 precessor[i][j].set(x, y);
                 coordinate2 c(i, j);
                 double d = (abs(x-i)+abs(y-j)==1) ? dis+dis1*posiWeight[i][j]: dis+dis2*posiWeight[i][j];
+                if (flag) rtPointDis[idx][i][j] = d;
+                else wbPointDis[idx][i][j] = d;
                 if (c == dest) {
                     // 找到工作台
                     pathLength[wbIdx] = d;
@@ -260,7 +261,7 @@ void dijkstra(int idx, coordinate2 src, int wbIdx, coordinate2 dest, bool flag) 
                     return ;
                 }
                 visited[i][j] = true;
-                q.push(node(d, c));           
+                q.push(dijkstraNode(d, c));           
             }
         }
     }    
