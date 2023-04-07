@@ -17,6 +17,9 @@ extern double rtPathLength[ROBOT_SIZE][WORKBENCH_SIZE];
 // wbPathLength存储了从源点到该坐标的距离 
 extern double wbPathLength[WORKBENCH_SIZE][WORKBENCH_SIZE]; 
 
+// 上一次调用dijkstra时机器人的离散坐标
+extern coordinate2 robotCoordinate[ROBOT_SIZE];
+
 // 初始化位置权重
 extern void initWeight();
 

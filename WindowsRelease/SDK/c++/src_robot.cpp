@@ -63,6 +63,7 @@ void robot::checkDest() {
                 cmd.buy = true;
                 wb[wb_id].pstatus = false;
                 wb[wb_id].reachable = true;     // 该生产工作台可达
+                curMission.startIndex = -1;
                 releaseLock(curTask.destCo);
                 taskQueue.pop();                
                 // clock_t start = clock();              
@@ -72,6 +73,7 @@ void robot::checkDest() {
             if (curTask.sell) {
                 // 达到消耗工作台
                 cmd.sell = true;
+                curMission.endIndex = -1;
                 releaseLock(curTask.destCo);
                 taskQueue.pop();
             }              
@@ -92,6 +94,8 @@ void robot::checkTask() {
         // clock_t end = clock();
         // cerr << "Frame: " << frameID << " dijkstra all workbench cost" << end-start << endl;
         findMission(msNode, location, lsp);
+        // 下一帧需要重新检测到所有生产工作台的可能路径
+        robotCoordinate[rtIdx].set(-1,-1);
 
         for (int i = 0; i < msNode.size(); ++i) {
             mission selected = msNode[i];
