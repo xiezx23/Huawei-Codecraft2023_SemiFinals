@@ -6,7 +6,7 @@ int pathdetect_f[(MAP_SIZE + 2)*(MAP_SIZE + 2)];
 int lockID[MAP_SIZE][MAP_SIZE];
 int lockCnt = 1;
 
-set<pathlock_node> lockStatus[MAP_SIZE * MAP_SIZE];
+std::set<pathlock_node> lockStatus[MAP_SIZE * MAP_SIZE];
 int lockSize[MAP_SIZE * MAP_SIZE];
 bool lockWindows[ROBOT_SIZE];
 
@@ -208,7 +208,7 @@ bool pathlock_isLockable(int rtidx, const pathlock_node &rhs, int id) {
 }
 
 // 释放锁,type = 0 顺序释放锁，type = 1 倒序释放锁
-void pathlock_release(int rtidx, int x, int y, int flag = 0) {
+void pathlock_release(int rtidx, int x, int y, int flag) {
     int id = lockID[x][y];
 
     if (flag) {
@@ -278,6 +278,6 @@ coordinate2 pathlock_getExpectTime(double dd){
 // 上锁时预估的时间,size用于表示剩余加入栈的节点数量
 coordinate2 pathlock_getExpectTime(double dd , int size) {
     int r = dd/3 * 50  - 20;
-    int offest = (15000 - frameID)/size/size;
+    int offest = (15000 - frameID)/size;
     return coordinate2(r, r + 150 + offest);
 }

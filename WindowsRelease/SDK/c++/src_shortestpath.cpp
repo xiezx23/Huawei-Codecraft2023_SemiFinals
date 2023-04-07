@@ -271,7 +271,7 @@ void dijkstra(int idx, coordinate2 src, int wbIdx, coordinate2 dest, bool flag) 
 bool compress(int rtIdx, coordinate2 src, int startIdx, coordinate2 dest1, int endIdx, coordinate2 dest2) {
     robot& r = rt[rtIdx]; 
     while (!r.taskQueue.empty()) r.taskQueue.pop();
-    // cerr << "new Task: Frame" << frameID << " robot" << rtIdx << startIdx << " -> " << wbidx << endl;
+    // cerr << "new Task: Frame" << frameID << " robot" << rtIdx << "  "<<startIdx << " -> " << endIdx << endl;
 
     rtAngleSum[rtIdx][startIdx] = 0;
     wbAngleSum[startIdx][endIdx] = 0;
@@ -336,20 +336,24 @@ bool compress(int rtIdx, coordinate2 src, int startIdx, coordinate2 dest1, int e
 
     std::unique_lock<std::mutex> lock(path_mutex);
     while (s1.size() > 1 ) {
-        testAndSet(s1.top(), startIdx);
+        const coordinate2&c = s1.top();
+        testAndSet(c, startIdx,rtPointDis[rtIdx][c.x][c.y]);
         if (!flag) break;
         s1.pop();
     }
     if (flag) {
-        testAndSet(wb[startIdx].location, startIdx, 1, 0);
+        double dd = rtPointDis[rtIdx][dest1.x][dest1.y];
+        testAndSet(dest1, startIdx, dd,1, 0);
         if (flag) {
             while (s2.size() > 1) {
-                testAndSet(s2.top(), endIdx);
+                const coordinate2&c = s2.top();
+                testAndSet(c, endIdx, dd + wbPointDis[startIdx][c.x][c.y]);
                 if (!flag) break;
                 s2.pop();
             }
             if (flag) {
-                testAndSet(wb[endIdx].location, endIdx, 0, 1);
+                dd += wbPointDis[startIdx][dest2.x][dest2.y];
+                testAndSet(dest2, endIdx, dd, 0, 1);
             }
         }
     }
@@ -358,7 +362,7 @@ bool compress(int rtIdx, coordinate2 src, int startIdx, coordinate2 dest1, int e
         // 解锁
         while (!r.taskQueue.empty()) {
             const coordinate2 &c = r.taskQueue.front().destCo;
-            pathlock_release(rtIdx, c);
+            pathlock_release(rtIdx, c, 1);
             r.taskQueue.pop();
         }
 

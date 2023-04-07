@@ -23,7 +23,7 @@ struct pathlock_node{
     }
 };
 
-set<pathlock_node> lockStatus[MAP_SIZE * MAP_SIZE]; //锁的状态
+extern std::set<pathlock_node> lockStatus[MAP_SIZE * MAP_SIZE]; //锁的状态
 extern int lockSize[MAP_SIZE * MAP_SIZE];           //锁的大小
 extern bool lockWindows[ROBOT_SIZE];                //临时数组
 
