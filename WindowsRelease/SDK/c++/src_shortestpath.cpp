@@ -193,7 +193,7 @@ void dijkstra(int idx, coordinate2 src, bool flag) {
                 if (resolve_plat[i+1][j+1] == '#') continue;
                 if (resolve_plat[i+1][j+1] == '1') continue;
                 if (!flag && resolve_plat[i+1][j+1] == '3') continue;
-                if (flag && !pathlock_isReachable(idx,i,j)) continue;
+                if (flag && !pathlock_isReachable(idx,i,j,pathlock_getExpectTime(dis))) continue;
                 if (visited[i][j])  continue;
                 precessor[i][j].set(x, y);
                 coordinate2 dest(i, j);
@@ -249,7 +249,7 @@ void dijkstra(int idx, coordinate2 src, int wbIdx, coordinate2 dest, bool flag) 
                 if (j < 0 || j >= MAP_SIZE) continue;
                 if (resolve_plat[i+1][j+1] == '#') continue;
                 if (resolve_plat[i+1][j+1] == '1') continue;
-                if (flag && !pathlock_isReachable(idx,i,j)) continue;
+                // if (flag && !pathlock_isReachable(idx,i,j)) continue;
                 if (resolve_plat[i+1][j+1] == '3') continue;
                 if (visited[i][j])  continue;
                 precessor[i][j].set(x, y);
@@ -309,11 +309,13 @@ bool compress(int rtIdx, coordinate2 src, int startIdx, coordinate2 dest1, int e
 
     // 加入任务队列
     int flag = 1; 
-    auto testAndSet = [&](const coordinate2& c, const int &wbIdx, int buy = 0,int sell = 0){
-        if (!pathlock_acquire(rtIdx, c)) {
+    int left = s1.size() + s2.size();
+    auto testAndSet = [&](const coordinate2& c, const int &wbIdx, double dd,int buy = 0,int sell = 0){
+        if (!pathlock_acquire(rtIdx, c, pathlock_getExpectTime(dd,left))) {
             flag = 0;
         } else {
             r.taskQueue.push(task(c, wbIdx, buy, sell));
+            --left;
         }
     };
 
