@@ -40,7 +40,9 @@ void init() {
         for(int i = 0; i < MAP_SIZE; ++i){
             if(isdigit(plat[i][j])) {
                 wb[K].type = plat[i][j] - '0';
-                workbenchCoordinate[coordinate2(i, j)] = K; 
+                coordinate2 c(i, j);
+                wb[K].location = c;
+                workbenchCoordinate[c] = K; 
                 wb[K++].reachable = true;                
             }
             else if(plat[i][j] == 'A') {                
@@ -51,6 +53,8 @@ void init() {
     for (int i = 0; i < ROBOT_SIZE; ++i) {
         rt[i].rtIdx = i;
     }
+    initWeight();
+    initAccessibility();
     initShortestPath(robotLoc);
     // 记录每种物品的收益及生产周期
     profitAndTime[0] = make_pair(make_pair(0,0), INF);
@@ -100,9 +104,8 @@ void init() {
 
 int main() {
     readPlat();
-    initWeight();
     pathlock_init();
-    init();
+    init();    
     printMap();
     puts("OK");
     fflush(stdout);
@@ -129,6 +132,9 @@ int main() {
         }
         // if(frameID > 50)cerr << "dest:" << rt[0].curTask.destId << endl;
         // if(frameID > 50) debug();
+        // if (frameID > 6300) {
+        //     cerr << frameID << ' ' <<  rt[1].curMission.startIndex << ' ' << rt[1].curMission.endIndex << endl;
+        // }
         printf("OK\n");
         fflush(stdout);
     }
