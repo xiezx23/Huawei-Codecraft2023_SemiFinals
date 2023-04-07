@@ -188,8 +188,8 @@ void dijkstra(int idx, coordinate2 src, bool flag) {
                 precessor[i][j].set(x, y);
                 coordinate2 dest(i, j);
                 double d = (abs(x-i)+abs(y-j)==1) ? dis+dis1*posiWeight[i][j]: dis+dis2*posiWeight[i][j];
-                if (flag) rtPointDis[idx][i][j] = d;
-                else wbPointDis[idx][i][j] = d;
+                if (flag) rtPointDis[idx][i][j] = (abs(x-i)+abs(y-j)==1) ? rtPointDis[idx][x][y]+dis1: rtPointDis[idx][x][y]+dis2;
+                else wbPointDis[idx][i][j] = (abs(x-i)+abs(y-j)==1) ? wbPointDis[idx][x][y]+dis1: wbPointDis[idx][x][y]+dis2;
                 if (workbenchCoordinate.count(dest)) {
                     // 当前坐标有工作台，更新最短路
                     ++findk;
@@ -252,8 +252,8 @@ void dijkstra(int idx, coordinate2 src, int wbIdx, coordinate2 dest, bool flag) 
                 precessor[i][j].set(x, y);
                 coordinate2 c(i, j);
                 double d = (abs(x-i)+abs(y-j)==1) ? dis+dis1*posiWeight[i][j]: dis+dis2*posiWeight[i][j];
-                if (flag) rtPointDis[idx][i][j] = d;
-                else wbPointDis[idx][i][j] = d;
+                if (flag) rtPointDis[idx][i][j] = (abs(x-i)+abs(y-j)==1) ? rtPointDis[idx][x][y]+dis1: rtPointDis[idx][x][y]+dis2;
+                else wbPointDis[idx][i][j] = (abs(x-i)+abs(y-j)==1) ? wbPointDis[idx][x][y]+dis1: wbPointDis[idx][x][y]+dis2;
                 if (c == dest) {
                     // 找到工作台
                     pathLength[wbIdx] = d;
