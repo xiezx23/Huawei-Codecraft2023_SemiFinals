@@ -66,10 +66,6 @@ void initWeight() {
             }
         }
     }
-    for (int k = 0; k < K; ++k) {
-        coordinate2 wbLoca(wb[k].location);
-        posiWeight[wbLoca.x][wbLoca.y] = 1;
-    }
 }
 
 // 预处理，对点的可达性做判断
@@ -80,6 +76,11 @@ void initAccessibility() {
             if (posiWeight[i][j] < 1.1) continue;
 
             coordinate cur = pointCorrection(coordinate2(i, j));
+            if (i == 56 && j == 46) {
+                coordinate oriCur(coordinate2(i, j));
+                cerr << oriCur.x << ' ' << oriCur.y << endl;
+                cerr << cur.x << ' ' << cur.y << endl;
+            }
             double distance;
             const int bias = 2;
             for (int di = -bias; di <= bias; ++di) {
@@ -88,15 +89,18 @@ void initAccessibility() {
                     if (!di && !dj) continue;
                     if (j+dj+1 < 0 || j+dj+1 > MAP_SIZE+1) continue;
                     if (resolve_plat[i+di+1][j+dj+1] != '#') continue;
-                    double delta_d = sqrt(di*di + dj*dj)/max(fabs(di), fabs(dj));
                     coordinate wall = coordinate2(i+di, j+dj);
+                    if (cur.x  < wall.x) wall.x -= 0.25;
+                    else if (cur.x > wall.x) wall.x += 0.25;
+                    if (cur.y  < wall.y) wall.y -= 0.25;
+                    else if (cur.y > wall.y) wall.y += 0.25;
                     distance = dis(cur, wall);
-                    if (distance <= 0.45 + 0.25*delta_d) {
+                    if (distance <= 0.45) {
                         resolve_plat[i+1][j+1] = '1';
                         di = bias + 1;
                         break;
                     }
-                    else if (distance <= 0.53 + 0.25*delta_d) {
+                    else if (distance <= 0.53) {
                         resolve_plat[i+1][j+1] = '3';
                     }
                 }
@@ -123,6 +127,10 @@ void initAccessibility() {
         }
     }
     
+    for (int k = 0; k < K; ++k) {
+        coordinate2 wbLoca(wb[k].location);
+        posiWeight[wbLoca.x][wbLoca.y] = 1;
+    }
 }
 
 // 预处理，计算从机器人及工作台到所有工作台的最短路
