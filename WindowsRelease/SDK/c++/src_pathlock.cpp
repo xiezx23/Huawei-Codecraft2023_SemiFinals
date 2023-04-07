@@ -112,30 +112,6 @@ void pathlock_init() {
         }
     };
 
-    // 将所有中心位置与墙壁的距离不大于r的离散坐标标记为c
-    //auto rLabel2 = [](double r, char c){
-    //    double boundary = ((r + 0.25) * 2);
-    //    const int dM = ceil(boundary);   
-    //    boundary = boundary * boundary;     
-    //    for (int i = 0; i <= MAP_SIZE + 1; ++i) {
-    //        for (int j = 0; j <= MAP_SIZE + 1; ++j) {
-    //            if (resolve_plat[i][j] == '#') {
-    //                for (int di = -dM; di <= dM; ++di) {
-    //                    if (i+di < 1 || i+di > MAP_SIZE) continue;
-    //                    for (int dj = -dM; dj <= dM; ++dj) {
-    //                        if (j+dj < 1 || j+dj > MAP_SIZE) continue;
-    //                        if (resolve_plat[i+di][j+dj] == '.') {
-    //                            if (di * di + dj * dj <= boundary) {
-    //                                resolve_plat[i+di][j+dj] = c;
-    //                            }
-    //                        }
-    //                    }
-    //                }
-    //            }
-    //        }
-    //    }
-    //};
-
     // 任何机器人无法通过
     rLabel(0.45, '1');    
     // 单行道
@@ -175,8 +151,6 @@ void pathlock_init() {
     lockSize[0] = 0x3f3f3f;
     for (int i = 1; i < lockCnt; i++) lockSize[i] = 1;
 
-    // 仅允许不携带物品的机器人通过
-    // rLabel2(0.53, '3');
 }
 
 // 输出处理后的地图
