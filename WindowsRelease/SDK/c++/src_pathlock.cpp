@@ -5,10 +5,13 @@ int pathdetect_f[(MAP_SIZE + 2)*(MAP_SIZE + 2)];
 
 int lockID[MAP_SIZE][MAP_SIZE];
 int lockCnt = 1;
-int lockStatus[MAP_SIZE * MAP_SIZE];
-int robotStatus[4][MAP_SIZE * MAP_SIZE];
 
-std::mutex path_mutex; 
+fhq_treap<pathlock_node> lockStatus_s[MAP_SIZE * MAP_SIZE][4];
+fhq_treap<int> lockStatus_e[MAP_SIZE * MAP_SIZE][4];
+int lockSize[MAP_SIZE * MAP_SIZE];
+
+
+std::shared_timed_mutex path_mutex; 
 
 // 并查集维护连通分量
 int pathdetect_find(int g){
@@ -22,7 +25,6 @@ void pathdetect_merge(int a,int b) {
         pathdetect_f[b] = a;
     }
 }
-
 
 
 void pathlock_init() {
@@ -145,11 +147,9 @@ void pathlock_init() {
     }
 
     // 初始化锁状态
-    lockStatus[0] = 0x3f3f3f;
-    for (int i = 1; i < lockCnt; i++) lockStatus[i] = 1;
-    #ifdef PATH_DEBUG
-    fprintf(stderr,"lockCnt : %d\n", lockCnt);
-    #endif
+    lockSize[0] = 0x3f3f3f;
+    for (int i = 1; i < lockCnt; i++) lockSize[i] = 1;
+
 }
 
 // 输出处理后的地图
@@ -161,65 +161,19 @@ void printMap() {
     // 输出处理后的地图
     for (int j = MAP_SIZE - 1; j + 1; --j) {
         for (int i = 0; i < MAP_SIZE; i++) {
-            fprintf(stderr,"%c", resolve_plat[i+1][j+1]);
-            // if (lockID[i][j]) fprintf(stderr,"%c", ma[lockID[i][j]%52]);
-            // else fprintf(stderr,"%c", resolve_plat[i+1][j+1]);
+            // fprintf(stderr,"%c", resolve_plat[i+1][j+1]);
+            if (lockID[i][j]) fprintf(stderr,"%c", ma[lockID[i][j]%52]);
+            else fprintf(stderr,"%c", resolve_plat[i+1][j+1]);
         }
         cerr<<endl;
     }
     cerr<<endl;
 }
 
-// 释放锁
-void pathlock_release(int rtidx, int x, int y) {
-    int id = lockID[x][y];
-    #ifdef PATH_DEBUG
-    fprintf(stderr,"release curframeID : %d lockID : %d,robot : %d lockStatus : %d robotStatus : %d\n", frameID, id, rtidx, lockStatus[id], robotStatus[rtidx][id]);
-    #endif
-
-    if (robotStatus[rtidx][id]) if(!--robotStatus[rtidx][id]) ++lockStatus[id];
-}
-
-// 获取锁
-bool pathlock_acquire(int rtidx, int x, int y) {
-    int id = lockID[x][y], flag = 0;
-    #ifdef PATH_DEBUG
-    fprintf(stderr,"acquire curframeID : %d lockID : %d,robot : %d lockStatus : %d robotStatus : %d\n", frameID, id, rtidx, lockStatus[id], robotStatus[rtidx][id]);
-    #endif
-    
-    if (robotStatus[rtidx][id] > 0) ++robotStatus[rtidx][id],flag = 1;
-    else if (lockStatus[id] > 0) --lockStatus[id], ++robotStatus[rtidx][id], flag = 1;
-    
-    #ifdef PATH_DEBUG
-    fprintf(stderr,"acquire %s curframeID : %d lockID : %d,robot : %d\n", flag?"success":"fail", frameID, id, rtidx);
-    #endif
-    return flag;
-}
-
-// 判断节点是否可经过
-bool pathlock_isReachable(int rtidx, int x, int y) {
-    int id = lockID[x][y];
-    return (robotStatus[rtidx][id] > 0 || lockStatus[id] > 0);
-}
 
 // 获取锁类型
 int pathlock_type(int x,int y) {
     return lockID[x][y];
-}
-
-// 释放锁
-void pathlock_release(int rtidx, const coordinate2 &pos) {
-    return pathlock_release(rtidx, pos.x, pos.y);
-}
-
-// 获取锁
-bool pathlock_acquire(int rtidx, const coordinate2 &pos) {
-    return pathlock_acquire(rtidx, pos.x, pos.y);
-}
-
-// 判断节点是否可经过
-bool pathlock_isReachable(int rtidx, const coordinate2 &pos) {
-    return pathlock_isReachable(rtidx, pos.x, pos.y);
 }
 
 // 获取锁类型
@@ -227,17 +181,100 @@ int pathlock_type(const coordinate2 &pos) {
     return pathlock_type(pos.x, pos.y);
 }
 
-// 查询指定点的上锁情况
-void pathlock_getStatus(const coordinate2 &pos) {
-    pathlock_getStatus(pos.x, pos.y);
+// 判断目标时间窗能否被加锁
+bool pathlock_isLockable(int rtidx, const pathlock_node &rhs, int id) {
+    if (!id) return true;
+    int n = lockSize[id] - 1;
+    
+    int flag = 1;
+    // 枚举元素，判断是否有交集
+
+    auto & lockStatus_ts = lockStatus_s[id];
+    auto & lockStatus_te = lockStatus_e[id];
+
+    for (int i = 0; i < ROBOT_SIZE; i++) {
+        if (i == rtidx) continue;
+        int s0 = lockStatus_ts[i].rank(rhs);
+        int s1 = lockStatus_ts[i].rank(rhs.e_time + 1);
+        int s2 = lockStatus_te[i].rank(rhs);
+        if (s0 != s1 || s0 != s2) {
+            if (--n < 0) {
+                flag = 0;
+                break;
+            }
+        }
+    }
+    
+    return flag;
 }
 
-// 查询指定点的上锁情况
-void pathlock_getStatus(int x, int y) {
-    fprintf(stderr,"lock_Status frameId : %d lock_Id : %d pos : (%d,%d) lockStatus : %d\n", frameID,lockID[x][y], x, y, lockStatus[lockID[x][y]]);
-    for(int i = 0; i < ROBOT_SIZE; i++) {
-        coordinate2 pos = rt[i].location;
-        fprintf(stderr,"\trobot %d : %d %d %d\n", i, robotStatus[i][lockID[x][y]],pos.x, pos.y);
+// 释放锁,type = 0 顺序释放锁，type = 1 倒序释放锁
+void pathlock_release(int rtidx, int x, int y, int flag) {
+    int id = lockID[x][y];
+
+    if (!id) return;
+
+    auto & lockStatus_ts = lockStatus_s[id][rtidx];
+    auto & lockStatus_te = lockStatus_e[id][rtidx];
+    auto lock = flag?lockStatus_ts.pop_back():lockStatus_ts.pop_front();
+
+    if (lock.s_time <= 15000) {
+        lockStatus_te.del(lock.e_time);
     }
-    fprintf(stderr,"\n");
+}
+
+// 获取锁
+bool pathlock_acquire(int rtidx, int x, int y, const pathlock_node& rhs) {
+    int id = lockID[x][y], flag = 0;
+    
+    if (!id) return true;
+
+    if (pathlock_isLockable(rtidx, rhs, id)) {
+        lockStatus_s[id][rtidx].insert(rhs);
+        lockStatus_e[id][rtidx].insert(rhs.e_time);
+        flag = 1;
+    }
+    return flag;
+}
+
+// 获取锁
+bool pathlock_acquire(int rtidx, int x, int y, int s_time, int e_time) {
+    return pathlock_acquire(rtidx, x, y, pathlock_node(s_time, e_time));
+}
+
+
+// 获取锁
+bool pathlock_acquire(int rtidx, const coordinate2& pos, const pathlock_node& time) {
+    return pathlock_acquire(rtidx, pos.x, pos.y, time);
+}
+
+// 判断节点在指定时间段是否可经过
+bool pathlock_isReachable(int rtidx, int x, int y, int s_time, int e_time) {
+    int id = lockID[x][y];
+    return pathlock_isLockable(rtidx, pathlock_node(s_time, e_time), id);
+}
+
+// 判断节点在指定时间段是否可经过
+bool pathlock_isReachable(int rtidx, int x, int y, const pathlock_node& time) {
+    int id = lockID[x][y];
+    return pathlock_isLockable(rtidx, time, id);
+}
+
+// 释放锁
+void pathlock_release(int rtidx, const coordinate2 &pos, int flag) {
+    pathlock_release(rtidx, pos.x, pos.y, flag);
+}
+
+
+// dijkstra调用时预估的时间
+pathlock_node pathlock_getExpectTime(double dd){
+    int r = dd/3 * 50  - 20;
+    return pathlock_node(r, r + 150);
+}
+
+// 上锁时预估的时间,size用于表示剩余加入栈的节点数量
+pathlock_node pathlock_getExpectTime(double dd , int size) {
+    int r = frameID + max<int>(dd/3 * 50  - 320,0);
+    int offest = (15000 - frameID)/size/size;
+    return pathlock_node(1, 15000);
 }
