@@ -21,19 +21,21 @@ double rtPathLength[ROBOT_SIZE][WORKBENCH_SIZE];
 coordinate2 wbPrecessor[WORKBENCH_SIZE][MAP_SIZE][MAP_SIZE];   
 double wbPathLength[WORKBENCH_SIZE][WORKBENCH_SIZE]; 
 
+// 从机器人i到工作台k的最短路上所需转动角度的总和
+double rtAngleSum[ROBOT_SIZE][WORKBENCH_SIZE];
+// 从工作台i到工作台k的最短路上所需转动角度的总和
+double wbAngleSum[WORKBENCH_SIZE][WORKBENCH_SIZE];
+
+// 机器人到各离散点的距离
+double rtPointDis[ROBOT_SIZE][MAP_SIZE][MAP_SIZE];
+// 工作台到各离散点的距离
+double wbPointDis[WORKBENCH_SIZE][MAP_SIZE][MAP_SIZE];
+
 // 水平或直接相邻的距离及对角相邻的距离
 const double dis1 = 1, dis2 = sqrt(2);
 
 // 不可达标志
 const double inf = -1;
-
-// dijkstra算法优先队列中的结构，first为到源节点的距离，second为离散坐标
-typedef pair<double, coordinate2> dijkstraNode;
-struct cmp {
-    inline bool operator()(const dijkstraNode& op1, const dijkstraNode& op2) const {
-        return op1.first > op2.first;
-    }
-};
 
 // 加入位置权重
 double posiWeight[MAP_SIZE][MAP_SIZE];
@@ -76,11 +78,6 @@ void initAccessibility() {
             if (posiWeight[i][j] < 1.1) continue;
 
             coordinate cur = pointCorrection(coordinate2(i, j));
-            if (i == 56 && j == 46) {
-                coordinate oriCur(coordinate2(i, j));
-                cerr << oriCur.x << ' ' << oriCur.y << endl;
-                cerr << cur.x << ' ' << cur.y << endl;
-            }
             double distance;
             const int bias = 2;
             for (int di = -bias; di <= bias; ++di) {
@@ -135,23 +132,11 @@ void initAccessibility() {
 
 // 预处理，计算从机器人及工作台到所有工作台的最短路
 void initShortestPath(const coordinate2* oricoordinate) {
-    // 机器人到所有位置不可达
-    for (int i = 0; i < ROBOT_SIZE; i++) {
-        for (int j = 0; j < WORKBENCH_SIZE; j++) {
-            rtPathLength[i][j] = inf;
-        }
-    }
     // 调用dijkstra计算最短路
     for (int i = 0; i < ROBOT_SIZE; ++i) {
         dijkstra(i, oricoordinate[i], true);
     }
 
-    // 机器人到所有位置不可达
-    for (int i = 0; i < WORKBENCH_SIZE; i++) {
-        for (int j = 0; j < WORKBENCH_SIZE; j++) {
-            wbPathLength[i][j] = inf;
-        }
-    }
     // 调用dijkstra计算最短路
     for (auto it = workbenchCoordinate.begin(); it != workbenchCoordinate.end(); ++it) {
         dijkstra(it->second, it->first, false);
@@ -166,18 +151,23 @@ void dijkstra(int idx, coordinate2 src, bool flag) {
         if (robotCoordinate[idx] == src) return;
         robotCoordinate[idx] = src;
         // 原最短路无效
-        for (int j = 0; j < WORKBENCH_SIZE; j++) {
-            rtPathLength[idx][j] = inf;
+        for (int i = 0; i < WORKBENCH_SIZE; ++i) {
+            rtPathLength[idx][i] = inf;
+        }
+    }
+    else {
+        for (int i = 0; i < WORKBENCH_SIZE; ++i) {
+            wbPathLength[idx][i] = inf;
         }
     }
     // cerr << "enter buy dijkstra: Frame" << frameID << " robot" << rtidx << endl;
 
     bool visited[MAP_SIZE][MAP_SIZE] = {0};
-    priority_queue<node, vector<node>, greater<node>> q;
+    priority_queue<dijkstraNode, vector<dijkstraNode>, greater<dijkstraNode>> q;
     coordinate2 (&precessor)[MAP_SIZE][MAP_SIZE] = flag ? rtPrecessor[idx] : wbPrecessor[idx];
     double (&pathLength)[WORKBENCH_SIZE] = flag ? rtPathLength[idx] : wbPathLength[idx];
 
-    q.push(node(0, src));
+    q.push(dijkstraNode(0, src));
     visited[src.x][src.y] = true;
     int findk = flag ? 0 : 1;
     while (!q.empty()) {
@@ -198,6 +188,8 @@ void dijkstra(int idx, coordinate2 src, bool flag) {
                 precessor[i][j].set(x, y);
                 coordinate2 dest(i, j);
                 double d = (abs(x-i)+abs(y-j)==1) ? dis+dis1*posiWeight[i][j]: dis+dis2*posiWeight[i][j];
+                if (flag) rtPointDis[idx][i][j] = (abs(x-i)+abs(y-j)==1) ? rtPointDis[idx][x][y]+dis1: rtPointDis[idx][x][y]+dis2;
+                else wbPointDis[idx][i][j] = (abs(x-i)+abs(y-j)==1) ? wbPointDis[idx][x][y]+dis1: wbPointDis[idx][x][y]+dis2;
                 if (workbenchCoordinate.count(dest)) {
                     // 当前坐标有工作台，更新最短路
                     ++findk;
@@ -209,7 +201,7 @@ void dijkstra(int idx, coordinate2 src, bool flag) {
                     }
                 }
                 visited[i][j] = true;
-                q.push(node(d, dest));           
+                q.push(dijkstraNode(d, dest));           
             }
         }
     }
@@ -224,18 +216,23 @@ void dijkstra(int idx, coordinate2 src, int wbIdx, coordinate2 dest, bool flag) 
         if (robotCoordinate[idx] == src) return;
         robotCoordinate[idx] = src;
         // 原最短路无效
-        for (int j = 0; j < WORKBENCH_SIZE; j++) {
-            rtPathLength[idx][j] = inf;
+        for (int i = 0; i < WORKBENCH_SIZE; ++i) {
+            rtPathLength[idx][i] = inf;
+        }
+    }
+    else {
+        for (int i = 0; i < WORKBENCH_SIZE; ++i) {
+            wbPathLength[idx][i] = inf;
         }
     }
     // cerr << "enter sell dijkstra: Frame" << frameID << " robot" << rtidx << " -> " << wbidx << endl;
 
     bool visited[MAP_SIZE][MAP_SIZE] = {0};
-    priority_queue<node, vector<node>, greater<node>> q;   
+    priority_queue<dijkstraNode, vector<dijkstraNode>, greater<dijkstraNode>> q;   
     coordinate2 (&precessor)[MAP_SIZE][MAP_SIZE] = flag ? rtPrecessor[idx] : wbPrecessor[idx];
-    double (&pathLength)[WORKBENCH_SIZE] = flag ? rtPathLength[idx] : wbPathLength[idx];                 
+    double (&pathLength)[WORKBENCH_SIZE] = flag ? rtPathLength[idx] : wbPathLength[idx];            
 
-    q.push(node(0, src));
+    q.push(dijkstraNode(0, src));
     visited[src.x][src.y] = true;
     while (!q.empty()) {
         int x = q.top().coor.x;
@@ -255,6 +252,8 @@ void dijkstra(int idx, coordinate2 src, int wbIdx, coordinate2 dest, bool flag) 
                 precessor[i][j].set(x, y);
                 coordinate2 c(i, j);
                 double d = (abs(x-i)+abs(y-j)==1) ? dis+dis1*posiWeight[i][j]: dis+dis2*posiWeight[i][j];
+                if (flag) rtPointDis[idx][i][j] = (abs(x-i)+abs(y-j)==1) ? rtPointDis[idx][x][y]+dis1: rtPointDis[idx][x][y]+dis2;
+                else wbPointDis[idx][i][j] = (abs(x-i)+abs(y-j)==1) ? wbPointDis[idx][x][y]+dis1: wbPointDis[idx][x][y]+dis2;
                 if (c == dest) {
                     // 找到工作台
                     pathLength[wbIdx] = d;
@@ -262,7 +261,7 @@ void dijkstra(int idx, coordinate2 src, int wbIdx, coordinate2 dest, bool flag) 
                     return ;
                 }
                 visited[i][j] = true;
-                q.push(node(d, c));           
+                q.push(dijkstraNode(d, c));           
             }
         }
     }    
@@ -274,6 +273,8 @@ bool compress(int rtIdx, coordinate2 src, int startIdx, coordinate2 dest1, int e
     while (!r.taskQueue.empty()) r.taskQueue.pop();
     // cerr << "new Task: Frame" << frameID << " robot" << rtIdx << startIdx << " -> " << wbidx << endl;
 
+    rtAngleSum[rtIdx][startIdx] = 0;
+    wbAngleSum[startIdx][endIdx] = 0;
     stack<coordinate2> s1, s2;
     coordinate2 diff, prediff(-2,-2);
     coordinate2 t, t2 = dest1;
@@ -286,10 +287,17 @@ bool compress(int rtIdx, coordinate2 src, int startIdx, coordinate2 dest1, int e
         if (diff == prediff && !pathlock_type(t2)) {
             s1.pop();
         }
-        prediff = diff;
+        else {            
+            rtAngleSum[rtIdx][startIdx] += cntAngle(prediff, diff);
+            prediff = diff;
+        }        
         s1.push(t);
         swap(t,t2);
-        t = rtPrecessor[rtIdx][t.x][t.y];   
+        t = rtPrecessor[rtIdx][t2.x][t2.y];   
+    }
+    cmpdir(diff, t2, t);
+    if (diff != prediff) {
+        rtAngleSum[rtIdx][startIdx] += cntAngle(prediff, diff);
     }
     
     // 对去往消费工作台的最短路进行压缩
@@ -301,10 +309,17 @@ bool compress(int rtIdx, coordinate2 src, int startIdx, coordinate2 dest1, int e
         if (diff == prediff && !pathlock_type(t2)) {
             s2.pop();
         }
-        prediff = diff;
+        else { 
+            wbAngleSum[startIdx][endIdx] += cntAngle(prediff, diff);
+            prediff = diff;
+        }
         s2.push(t);
         swap(t,t2);
-        t = wbPrecessor[startIdx][t.x][t.y];   
+        t = wbPrecessor[startIdx][t2.x][t2.y];   
+    }
+    cmpdir(diff, t2, t);
+    if (diff != prediff) {
+        wbAngleSum[startIdx][endIdx] += cntAngle(prediff, diff);
     }
 
     // 加入任务队列
@@ -346,7 +361,6 @@ bool compress(int rtIdx, coordinate2 src, int startIdx, coordinate2 dest1, int e
         }
 
         // 当前路径无效，需要重新寻找
-        // rtPathLength[rtIdx][startIdx] = inf;
         // 下一帧需要重新检测到所有生产工作台的可能路径
         robotCoordinate[rtIdx].set(-1,-1);
     }

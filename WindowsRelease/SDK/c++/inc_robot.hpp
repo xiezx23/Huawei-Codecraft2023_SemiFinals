@@ -32,6 +32,11 @@ struct robot {
     //携带的产品来自的节点
     int nodeId = -1;
 
+    // 仅当该值为0时，允许调用dijkstra算法
+    int waitFrame;
+    // 等到时间的增量
+    int waitIncerment;
+
     void checkDest();
     void checkTask();
     void checkSpeed();

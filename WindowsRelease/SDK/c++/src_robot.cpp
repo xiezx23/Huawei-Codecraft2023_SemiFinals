@@ -83,8 +83,10 @@ void robot::checkDest() {
 
 // 检查任务队列情况
 void robot::checkTask() {
-
-    if (taskQueue.empty()) {
+    if (waitFrame) {
+        --waitFrame;
+    }
+    else if (taskQueue.empty()) {
         bool success = false;
 
         // 分配新任务
@@ -117,7 +119,14 @@ void robot::checkTask() {
             }
         }
         if (!success) {
+            waitFrame = waitIncerment;
+            waitIncerment += 3;
+            waitIncerment = min(waitIncerment, 20);                    
             return;
+        }
+        else {
+            waitFrame = 0;
+            waitIncerment = 1;
         }
     }
     if (haveTemDest) {

@@ -17,8 +17,18 @@ extern double rtPathLength[ROBOT_SIZE][WORKBENCH_SIZE];
 // wbPathLength存储了从源点到该坐标的距离 
 extern double wbPathLength[WORKBENCH_SIZE][WORKBENCH_SIZE]; 
 
+// 从机器人i到工作台k的最短路上所需转动角度的总和
+extern double rtAngleSum[ROBOT_SIZE][WORKBENCH_SIZE];
+// 从工作台i到工作台k的最短路上所需转动角度的总和
+extern double wbAngleSum[WORKBENCH_SIZE][WORKBENCH_SIZE];
+
 // 上一次调用dijkstra时机器人的离散坐标
 extern coordinate2 robotCoordinate[ROBOT_SIZE];
+
+// 机器人到各离散点的距离
+extern double rtPointDis[ROBOT_SIZE][MAP_SIZE][MAP_SIZE];
+// 工作台到各离散点的距离
+extern double wbPointDis[WORKBENCH_SIZE][MAP_SIZE][MAP_SIZE];
 
 // 初始化位置权重
 extern void initWeight();

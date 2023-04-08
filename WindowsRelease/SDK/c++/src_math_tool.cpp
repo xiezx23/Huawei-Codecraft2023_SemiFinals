@@ -34,3 +34,8 @@ double cntAngle(vec& a, vec& b){
     }
     return (angleDiff);
 }
+
+// 计算从dir1到dir2需要转动的角度
+extern double cntAngle(const coordinate2& dir1, const coordinate2& dir2) {
+    return acos((dir1.x * dir2.x + dir1.y * dir2.y) / ((sqrt(dir1.x * dir1.x + dir1.y * dir1.y)) * (sqrt(dir2.x * dir2.x + dir2.y * dir2.y))));
+}
