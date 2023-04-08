@@ -151,7 +151,7 @@ void pathlock_init() {
         for (int j = 1; j < MAP_SIZE + 1; j++) {
             int pos = i * (MAP_SIZE + 2) + j;
             int fa = pathdetect_find(pos);
-            if (pathdetect_f[fa] == -1) {
+            if (pathdetect_f[fa] == -1 && resolve_plat[i][j] != '2') {
                 continue;
             }
             int &g = lockID[fa / (MAP_SIZE + 2) - 1][(fa % (MAP_SIZE + 2))-1];
