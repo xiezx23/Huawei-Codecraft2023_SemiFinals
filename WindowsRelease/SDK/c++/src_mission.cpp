@@ -1,8 +1,5 @@
 #include "inc_codecraft2023.hpp"
 
-double para5 = 1;
-double para6 = 1;
-
 void mission::set(int s, int e, int p) {
     startIndex = s;
     endIndex = e;
@@ -12,7 +9,8 @@ void mission::set(int s, int e, int p) {
 void mission::countValue(int rtidx, int proType, vec& lsp) {
     double dd = rtPathLength[rtidx][startIndex] + wbPathLength[startIndex][endIndex];
     double rr = rtAngleSum[rtidx][startIndex] + wbAngleSum[startIndex][endIndex];
-    double tt = para5 * dd / 3 + para6 * rr / PI;
+    double tt = dd / 4 + rr / PI;
+    estFrame = tt * 50 + 100;
 
     // coordinate& rtCo = rt[rtidx].location;
     // // 计算价值函数 参数依次为机器人坐标、预计携带产品类型、机器人速度向量
