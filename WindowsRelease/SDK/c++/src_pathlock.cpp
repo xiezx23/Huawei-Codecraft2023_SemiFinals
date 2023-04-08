@@ -6,13 +6,12 @@ int pathdetect_f[(MAP_SIZE + 2)*(MAP_SIZE + 2)];
 int lockID[MAP_SIZE][MAP_SIZE];
 int lockCnt = 1;
 
-std::set<pathlock_node> lockStatus[MAP_SIZE * MAP_SIZE];
+fhq_treap<pathlock_node> lockStatus_s[MAP_SIZE * MAP_SIZE][4];
+fhq_treap<int> lockStatus_e[MAP_SIZE * MAP_SIZE][4];
 int lockSize[MAP_SIZE * MAP_SIZE];
-bool lockWindows[ROBOT_SIZE];
 
 
-
-std::mutex path_mutex; 
+std::shared_timed_mutex path_mutex; 
 
 // 并查集维护连通分量
 int pathdetect_find(int g){
@@ -162,9 +161,9 @@ void printMap() {
     // 输出处理后的地图
     for (int j = MAP_SIZE - 1; j + 1; --j) {
         for (int i = 0; i < MAP_SIZE; i++) {
-            fprintf(stderr,"%c", resolve_plat[i+1][j+1]);
-            // if (lockID[i][j]) fprintf(stderr,"%c", ma[lockID[i][j]%52]);
-            // else fprintf(stderr,"%c", resolve_plat[i+1][j+1]);
+            // fprintf(stderr,"%c", resolve_plat[i+1][j+1]);
+            if (lockID[i][j]) fprintf(stderr,"%c", ma[lockID[i][j]%52]);
+            else fprintf(stderr,"%c", resolve_plat[i+1][j+1]);
         }
         cerr<<endl;
     }
@@ -184,22 +183,24 @@ int pathlock_type(const coordinate2 &pos) {
 
 // 判断目标时间窗能否被加锁
 bool pathlock_isLockable(int rtidx, const pathlock_node &rhs, int id) {
+    if (!id) return true;
     int n = lockSize[id] - 1;
-    for (int i = 0; i < ROBOT_SIZE; i++) {
-        lockWindows[i] = 0;
-    }
-    lockWindows[rtidx] = 1;
+    
     int flag = 1;
     // 枚举元素，判断是否有交集
-    for (auto it = lockStatus[id].begin(); it != lockStatus[id].end(); ++it) {
-        if (it -> s_time > rhs.e_time) break;
-        if (it->check(rhs)) {
-            if (!lockWindows[it->rtIdx]) {
-                lockWindows[it->rtIdx] = 1;
-                if (--n < 0) {
-                    flag = 0;
-                    break;
-                } 
+
+    auto & lockStatus_ts = lockStatus_s[id];
+    auto & lockStatus_te = lockStatus_e[id];
+
+    for (int i = 0; i < ROBOT_SIZE; i++) {
+        if (i == rtidx) continue;
+        int s0 = lockStatus_ts[i].rank(rhs);
+        int s1 = lockStatus_ts[i].rank(rhs.e_time + 1);
+        int s2 = lockStatus_te[i].rank(rhs);
+        if (s0 != s1 || s0 != s2) {
+            if (--n < 0) {
+                flag = 0;
+                break;
             }
         }
     }
@@ -211,42 +212,53 @@ bool pathlock_isLockable(int rtidx, const pathlock_node &rhs, int id) {
 void pathlock_release(int rtidx, int x, int y, int flag) {
     int id = lockID[x][y];
 
-    if (flag) {
-        for (auto it = lockStatus[id].rbegin(); it != lockStatus[id].rend(); ++it) {
-            if (it->rtIdx == rtidx) {
-                lockStatus[id].erase(--it.base());
-                break;
-            }
-        }
-    } else {
-        for (auto it = lockStatus[id].begin(); it != lockStatus[id].end(); ++it) {
-            if (it->rtIdx == rtidx) {
-                lockStatus[id].erase(it);
-                break;
-            }
-        }
+    if (!id) return;
+
+    auto & lockStatus_ts = lockStatus_s[id][rtidx];
+    auto & lockStatus_te = lockStatus_e[id][rtidx];
+    auto lock = flag?lockStatus_ts.pop_back():lockStatus_ts.pop_front();
+
+    if (lock.s_time <= 15000) {
+        lockStatus_te.del(lock.e_time);
     }
-    
 }
 
 // 获取锁
-bool pathlock_acquire(int rtidx, int x, int y, int s_time, int e_time) {
+bool pathlock_acquire(int rtidx, int x, int y, const pathlock_node& rhs) {
     int id = lockID[x][y], flag = 0;
     
-    const pathlock_node rhs(rtidx, s_time, e_time);
+    if (!id) return true;
+
     if (pathlock_isLockable(rtidx, rhs, id)) {
-        lockStatus[id].insert(rhs);
+        lockStatus_s[id][rtidx].insert(rhs);
+        lockStatus_e[id][rtidx].insert(rhs.e_time);
         flag = 1;
     }
     return flag;
 }
 
+// 获取锁
+bool pathlock_acquire(int rtidx, int x, int y, int s_time, int e_time) {
+    return pathlock_acquire(rtidx, x, y, pathlock_node(s_time, e_time));
+}
+
+
+// 获取锁
+bool pathlock_acquire(int rtidx, const coordinate2& pos, const pathlock_node& time) {
+    return pathlock_acquire(rtidx, pos.x, pos.y, time);
+}
+
 // 判断节点在指定时间段是否可经过
 bool pathlock_isReachable(int rtidx, int x, int y, int s_time, int e_time) {
     int id = lockID[x][y];
-    return pathlock_isLockable(rtidx, pathlock_node(rtidx, s_time, e_time), id);
+    return pathlock_isLockable(rtidx, pathlock_node(s_time, e_time), id);
 }
 
+// 判断节点在指定时间段是否可经过
+bool pathlock_isReachable(int rtidx, int x, int y, const pathlock_node& time) {
+    int id = lockID[x][y];
+    return pathlock_isLockable(rtidx, time, id);
+}
 
 // 释放锁
 void pathlock_release(int rtidx, const coordinate2 &pos, int flag) {
@@ -254,30 +266,15 @@ void pathlock_release(int rtidx, const coordinate2 &pos, int flag) {
 }
 
 
-// 获取锁
-bool pathlock_acquire(int rtidx, int x, int y, const coordinate2& time) {
-    return pathlock_acquire(rtidx, x, y, time.x, time.y);
-}
-
-// 获取锁
-bool pathlock_acquire(int rtidx, const coordinate2& pos, const coordinate2& time) {
-    return pathlock_acquire(rtidx, pos.x, pos.y, time.x, time.y);
-}
-
-// 判断节点在指定时间段是否可经过
-bool pathlock_isReachable(int rtidx, int x, int y, const coordinate2& time) {
-    return pathlock_isReachable(rtidx, x, y, time.x, time.y);
-}
-
 // dijkstra调用时预估的时间
-coordinate2 pathlock_getExpectTime(double dd){
+pathlock_node pathlock_getExpectTime(double dd){
     int r = dd/3 * 50  - 20;
-    return coordinate2(r, r + 150);
+    return pathlock_node(r, r + 150);
 }
 
 // 上锁时预估的时间,size用于表示剩余加入栈的节点数量
-coordinate2 pathlock_getExpectTime(double dd , int size) {
-    int r = dd/3 * 50  - 20;
-    int offest = (15000 - frameID)/size;
-    return coordinate2(r, r + 150 + offest);
+pathlock_node pathlock_getExpectTime(double dd , int size) {
+    int r = frameID + max<int>(dd/3 * 50  - 320,0);
+    int offest = (15000 - frameID)/size/size;
+    return pathlock_node(1, 15000);
 }

@@ -183,7 +183,8 @@ void dijkstra(int idx, coordinate2 src, bool flag) {
                 if (resolve_plat[i+1][j+1] == '#') continue;
                 if (resolve_plat[i+1][j+1] == '1') continue;
                 if (!flag && resolve_plat[i+1][j+1] == '3') continue;
-                if (flag && !pathlock_isReachable(idx,i,j,pathlock_getExpectTime(dis))) continue;
+                // 请现在循环外声明std::shared_lock<std::shared_timed_mutex> lock(path_mutex);进行加共享锁
+                // if (flag && !pathlock_isReachable(idx,i,j,pathlock_getExpectTime(dis))) continue;
                 if (visited[i][j])  continue;
                 precessor[i][j].set(x, y);
                 coordinate2 dest(i, j);
@@ -278,18 +279,21 @@ bool compress(int rtIdx, coordinate2 src, int startIdx, coordinate2 dest1, int e
     stack<coordinate2> s1, s2;
     coordinate2 diff, prediff(-2,-2);
     coordinate2 t, t2 = dest1;
+    int lastType = 0,nowType;
 
     // 对去往生产工作台的最短路进行压缩   
     s1.push(dest1);
     t = rtPrecessor[rtIdx][dest1.x][dest1.y];    
     while (t != src) {        
         cmpdir(diff, t2, t);
-        if (diff == prediff && !pathlock_type(t2)) {
+        nowType = pathlock_type(t2);
+        if (diff == prediff && (!nowType ||nowType == lastType)) {
             s1.pop();
         }
         else {            
             rtAngleSum[rtIdx][startIdx] += cntAngle(prediff, diff);
             prediff = diff;
+            lastType = nowType;
         }        
         s1.push(t);
         swap(t,t2);
@@ -303,15 +307,17 @@ bool compress(int rtIdx, coordinate2 src, int startIdx, coordinate2 dest1, int e
     // 对去往消费工作台的最短路进行压缩
     s2.push(dest2);
     t = wbPrecessor[startIdx][dest2.x][dest2.y];
-    t2 = dest2, prediff = coordinate2(-2,-2);
+    t2 = dest2, prediff = coordinate2(-2,-2), lastType = 0;
     while (t != dest1) {        
         cmpdir(diff, t2, t);
-        if (diff == prediff && !pathlock_type(t2)) {
+        nowType = pathlock_type(t2);
+        if (diff == prediff && (!nowType ||nowType == lastType)) {
             s2.pop();
         }
         else { 
             wbAngleSum[startIdx][endIdx] += cntAngle(prediff, diff);
             prediff = diff;
+            lastType = nowType;
         }
         s2.push(t);
         swap(t,t2);
@@ -334,7 +340,7 @@ bool compress(int rtIdx, coordinate2 src, int startIdx, coordinate2 dest1, int e
         }
     };
 
-    std::unique_lock<std::mutex> lock(path_mutex);
+    std::unique_lock<std::shared_timed_mutex> lock(path_mutex);
     while (s1.size() > 1 ) {
         const coordinate2&c = s1.top();
         testAndSet(c, startIdx,rtPointDis[rtIdx][c.x][c.y]);
