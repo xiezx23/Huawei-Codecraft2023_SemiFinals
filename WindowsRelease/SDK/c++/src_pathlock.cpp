@@ -40,6 +40,10 @@ void pathlock_init() {
         resolve_plat[i][0] = resolve_plat[i][MAP_SIZE + 1] = '#';
         resolve_plat[0][i] = resolve_plat[MAP_SIZE + 1][i] = '#';
     }
+    for (int i = 0; i < K; i++) {
+        coordinate2 location = wb[i].location;
+        resolve_plat[location.x + 1][location.y + 1] = '#';
+    }
     
 
     memset(pathdetect_f, -1, sizeof(pathdetect_f));
@@ -164,6 +168,7 @@ void pathlock_init() {
     // 独立的工作台单独标2
     for (int i = 0; i < K; i++) {
         coordinate2 location = wb[i].location;
+        resolve_plat[location.x + 1][location.y + 1] = '2';
         int &g = lockID[location.x][location.y];
         if (!g) g = lockCnt++;
     }
