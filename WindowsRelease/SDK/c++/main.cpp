@@ -22,9 +22,9 @@ int totalSellNum[WORKBENCH_SIZE];   // 物品的出售次数
 
 threadPool* tp;     // 线程池
 
-double para1 = 25000;
-double para2 = 1;
-double para4 = 1;
+double para1 = 950000;
+double para2 = 7;
+double para4 = 0.35;
 
 map<int, std::vector<int>> type2BuyIndex;               // 根据产品类型寻找收购方下标
 pair<pair<int,int>,int> profitAndTime[WORKBENCH_SIZE];  // 记录收购价、购入价以及生产用时
@@ -109,6 +109,7 @@ int main() {
     pathlock_init();
     init();    
     // printMap();
+    // printMap2();
     puts("OK");
     fflush(stdout);
     while (scanf("%d", &frameID) != EOF) {

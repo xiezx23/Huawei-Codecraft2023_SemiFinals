@@ -9,8 +9,8 @@ void mission::set(int s, int e, int p) {
 void mission::countValue(int rtidx, int proType, vec& lsp) {
     double dd = rtPathLength[rtidx][startIndex] + wbPathLength[startIndex][endIndex];
     double rr = rtAngleSum[rtidx][startIndex] + wbAngleSum[startIndex][endIndex];
-    double tt = dd / 4 + rr / PI;
-    estFrame = tt * 50 + 100;
+    double tt = dd / 6 + rr / PI;
+    estFrame = tt * 50 + 50;
 
     // coordinate& rtCo = rt[rtidx].location;
     // // 计算价值函数 参数依次为机器人坐标、预计携带产品类型、机器人速度向量
@@ -26,7 +26,7 @@ void mission::countValue(int rtidx, int proType, vec& lsp) {
     double nextVv = profitAndTime[wb[endIndex].type].first.first - profitAndTime[wb[endIndex].type].first.second;
     // 考虑剩余原材料格对价值的影响，目标工作台的剩余材料格越少越重视
     if (wb[endIndex].type > 7) {
-        vv *= 0.8;
+        vv *= 0.6;
     }
     else if (wb[endIndex].type == 7) {
         vv += para4*nextVv/(3-wb[endIndex].rawMaterNum());
