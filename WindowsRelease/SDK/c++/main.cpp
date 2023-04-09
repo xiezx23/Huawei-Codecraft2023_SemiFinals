@@ -56,7 +56,7 @@ void init() {
         rt[i].waitIncerment = 1;
     }
     pathlock_init();
-    printMap();
+    // printMap();
     initWeight();
     initAccessibility();
     initShortestPath(robotLoc);

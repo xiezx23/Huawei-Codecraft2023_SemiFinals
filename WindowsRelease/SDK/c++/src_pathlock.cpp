@@ -200,7 +200,21 @@ void printMap2() {
     // 输出处理后的地图
     for (int j = MAP_SIZE - 1; j + 1; --j) {
         for (int i = 0; i < MAP_SIZE; i++) {
-            fprintf(stderr,"%c", resolve_plat[i+1][j+1]);
+            if (resolve_plat[i+1][j+1] == '1') {
+                fprintf(stderr,"\033[0m\033[1;33m%c\033[0m", resolve_plat[i+1][j+1]);
+            }
+            else if (resolve_plat[i+1][j+1] == '2') {
+                fprintf(stderr,"\033[0m\033[1;33m%c\033[0m", resolve_plat[i+1][j+1]);
+            }
+            else if (resolve_plat[i+1][j+1] == '3') {
+                fprintf(stderr,"\033[0m\033[1;33m%c\033[0m", resolve_plat[i+1][j+1]);
+            }
+            else if (resolve_plat[i+1][j+1] == '#') {
+                fprintf(stderr,"\033[0m\033[1;31m%c\033[0m", resolve_plat[i+1][j+1]);
+            }            
+            else {
+                fprintf(stderr,"\033[0m\033[1;30m%c\033[0m", resolve_plat[i+1][j+1]);
+            }
             // if (lockID[i][j]) fprintf(stderr,"%c", ma[lockID[i][j]%52]);
             // else fprintf(stderr,"%c", resolve_plat[i+1][j+1]);
         }

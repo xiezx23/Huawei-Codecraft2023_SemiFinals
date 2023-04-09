@@ -127,9 +127,8 @@ void robot::checkTask() {
         }
         if (!success) {
             waitFrame = waitIncerment;
-            waitIncerment += 0;
+            waitIncerment += 3;
             waitIncerment = min(waitIncerment, 20);     
-            return;
         }
         else {
             waitFrame = 0;
