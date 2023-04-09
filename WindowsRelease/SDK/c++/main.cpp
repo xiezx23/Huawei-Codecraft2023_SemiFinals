@@ -52,6 +52,8 @@ void init() {
     }
     for (int i = 0; i < ROBOT_SIZE; ++i) {
         rt[i].rtIdx = i;
+        rt[i].waitFrame = 0;
+        rt[i].waitIncerment = 1;
     }
     initWeight();
     initAccessibility();
@@ -105,8 +107,9 @@ void init() {
 int main() {
     readPlat();
     pathlock_init();
+    init(); 
     // printMap();
-    init();     
+    // printMap2();
     puts("OK");
     fflush(stdout);
     while (scanf("%d", &frameID) != EOF) {

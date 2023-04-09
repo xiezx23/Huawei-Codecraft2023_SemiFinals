@@ -26,8 +26,7 @@ double cntPontEnergy(int rtIdx, coordinate& d) {
 }
 
 void collitionAvoidance() {
-    double u = 0.5; // 拥塞阈值
-    if (K == 18) u = 0.35;
+    double u = 0.3; // 拥塞阈值
     for (int curRt = 0; curRt < ROBOT_SIZE; ++curRt) {
         // if (rt[curRt].haveTemDest) continue;
         // 枚举每个机器人，计算其碰撞势能检测点受到的势能

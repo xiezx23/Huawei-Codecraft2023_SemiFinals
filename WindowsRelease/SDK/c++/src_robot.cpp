@@ -83,8 +83,10 @@ void robot::checkDest() {
 
 // 检查任务队列情况
 void robot::checkTask() {
-
-    if (taskQueue.empty()) {
+    if (waitFrame) {
+        --waitFrame;
+    }
+    else if (taskQueue.empty()) {
         bool success = false;
 
         // 分配新任务
@@ -117,7 +119,15 @@ void robot::checkTask() {
             }
         }
         if (!success) {
+            waitFrame = waitIncerment;
+            waitIncerment += 3;
+            waitIncerment = min(waitIncerment, 20);                    
             return;
+        }
+        else {
+            waitFrame = 0;
+            waitIncerment = 1;
+            // cerr << "new Mission: Frame" << frameID << ":(robot" << rtIdx << ") " << curMission.startIndex << "->" << curMission.endIndex << endl;
         }
     }
     if (haveTemDest) {
@@ -160,6 +170,9 @@ void robot::findMission(std::vector<mission>& msNode, coordinate& rtCo, vec& lsp
                     // 此时从 wbIdx 到 buyWbIdx 是一个潜在任务
                     mission pot = mission(wbIdx, buyWbIdx, proType);
                     pot.countValue(rtIdx, proType, lsp);
+                    // if (frameID < 100 && rtIdx == 0) {
+                    //     cerr << wbIdx << " -> " << buyWbIdx << ": " << pot.v << endl;
+                    // }
                     msNode.push_back(pot);
                 } 
             }
