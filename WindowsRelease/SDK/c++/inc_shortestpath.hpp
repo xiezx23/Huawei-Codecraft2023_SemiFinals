@@ -42,9 +42,6 @@ void initShortestPath(const coordinate2* oricoordinate);
 // 计算从idx号机器人或idx号工作台到所有工作台的最短路（用于寻找到生产工作台的最短路，因此不携带物品）
 // 当flag为true时，表示源点为机器人；当flag为false时，表示源点为工作台
 void dijkstra(int idx, coordinate2 src, bool flag);
-// 计算从idx号机器人或idx号工作台到指定工作台的最短路（用于寻找到消耗工作台的最短路，携带了物品）
-// 当flag为true时，表示源点为机器人；当flag为false时，表示源点为工作台
-void dijkstra(int idx, coordinate2 src, int wbIdx, coordinate2 dest, bool flag);
 
 // 机器人rtidx调用dijkstra后，将从当前位置到生产工作台，及从生产工作台到消费工作台的最短路进行压缩，并加入任务队列
 bool compress(int rtIdx, coordinate2 src, int startIdx, coordinate2 dest1, int endIdx, coordinate2 dest2);
