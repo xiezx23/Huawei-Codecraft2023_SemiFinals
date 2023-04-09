@@ -159,6 +159,7 @@ void dijkstra(int idx, coordinate2 src, bool flag) {
         for (int i = 0; i < WORKBENCH_SIZE; ++i) {
             wbPathLength[idx][i] = inf;
         }
+        wbPathLength[idx][idx] = 0;
     }
     // cerr << "enter buy dijkstra: Frame" << frameID << " robot" << rtidx << endl;
 
@@ -170,7 +171,7 @@ void dijkstra(int idx, coordinate2 src, bool flag) {
     q.push(dijkstraNode(0, src));
     visited[src.x][src.y] = true;
     int findk = flag ? 0 : 1;
-    // std::shared_lock<std::shared_timed_mutex> lock(path_mutex);
+    std::shared_lock<std::shared_timed_mutex> lock(path_mutex);
     while (!q.empty()) {
         int x = q.top().coor.x;
         int y = q.top().coor.y;
@@ -181,92 +182,61 @@ void dijkstra(int idx, coordinate2 src, bool flag) {
             if (i < 0 || i >= MAP_SIZE) continue;
             for (int j = y-1; j <= y+1; ++j) {
                 if (j < 0 || j >= MAP_SIZE) continue;
-                if (resolve_plat[i+1][j+1] == '#') continue;
-                if (resolve_plat[i+1][j+1] == '1') continue;
-                if (!flag && resolve_plat[i+1][j+1] == '3') continue;
-                // 请现在循环外声明std::shared_lock<std::shared_timed_mutex> lock(path_mutex);加共享锁
-                // if (flag && !pathlock_isReachable(idx,i,j,pathlock_getExpectTime(dis))) continue;
                 if (visited[i][j])  continue;
-                precessor[i][j].set(x, y);
+                // 请现在循环外声明std::shared_lock<std::shared_timed_mutex> lock(path_mutex);加共享锁
+                if (flag && !pathlock_isReachable(idx,i,j,pathlock_getExpectTime(dis))) continue;
                 coordinate2 dest(i, j);
-                double d = (abs(x-i)+abs(y-j)==1) ? dis+dis1*posiWeight[i][j]: dis+dis2*posiWeight[i][j];
-                if (flag) rtPointDis[idx][i][j] = (abs(x-i)+abs(y-j)==1) ? rtPointDis[idx][x][y]+dis1: rtPointDis[idx][x][y]+dis2;
-                else wbPointDis[idx][i][j] = (abs(x-i)+abs(y-j)==1) ? wbPointDis[idx][x][y]+dis1: wbPointDis[idx][x][y]+dis2;
                 if (workbenchCoordinate.count(dest)) {
-                    // 当前坐标有工作台，更新最短路
-                    ++findk;
-                    pathLength[workbenchCoordinate[dest]] = d;
-                    if (findk == K) {  
-                        // 已找到K个工作台的最短路       
-                        // cerr << "success exit buy dijkstra: Frame" << frameID << " robot" << rtidx << endl;               
-                        return ;
+                    // 工作台
+                    if (resolve_plat[i+1][j+1] == '#' || resolve_plat[i+1][j+1] == '1' || (!flag && resolve_plat[i+1][j+1] == '3')) {
+                        // 本应不能达到
+                        if (i == x || j == y) {
+                            // 工作台四方向坐标至少有一个可达，可将其作为终点
+                            precessor[i][j].set(x, y);
+                            double d = (abs(x-i)+abs(y-j)==1) ? dis+dis1*posiWeight[i][j]: dis+dis2*posiWeight[i][j];                        
+                            pathLength[workbenchCoordinate[dest]] = d;                        
+                            if (flag) rtPointDis[idx][i][j] = (abs(x-i)+abs(y-j)==1) ? rtPointDis[idx][x][y]+dis1: rtPointDis[idx][x][y]+dis2;
+                            else wbPointDis[idx][i][j] = (abs(x-i)+abs(y-j)==1) ? wbPointDis[idx][x][y]+dis1: wbPointDis[idx][x][y]+dis2;                        
+                            ++findk;
+                            if (findk == K) {  
+                                // 已找到K个工作台的最短路       
+                                // cerr << "success exit buy dijkstra: Frame" << frameID << " robot" << rtidx << endl;               
+                                return ;      
+                            }                                          
+                            visited[i][j] = true;
+                        }
+                    }
+                    else {                        
+                        precessor[i][j].set(x, y);
+                        double d = (abs(x-i)+abs(y-j)==1) ? dis+dis1*posiWeight[i][j]: dis+dis2*posiWeight[i][j];                        
+                        pathLength[workbenchCoordinate[dest]] = d;                        
+                        if (flag) rtPointDis[idx][i][j] = (abs(x-i)+abs(y-j)==1) ? rtPointDis[idx][x][y]+dis1: rtPointDis[idx][x][y]+dis2;
+                        else wbPointDis[idx][i][j] = (abs(x-i)+abs(y-j)==1) ? wbPointDis[idx][x][y]+dis1: wbPointDis[idx][x][y]+dis2;                        
+                        ++findk;
+                        if (findk == K) {  
+                            // 已找到K个工作台的最短路       
+                            // cerr << "success exit buy dijkstra: Frame" << frameID << " robot" << rtidx << endl;               
+                            return ;                        }
+                                          
+                        visited[i][j] = true;
+                        q.push(dijkstraNode(d, dest));  
                     }
                 }
-                visited[i][j] = true;
-                q.push(dijkstraNode(d, dest));           
+                else {
+                    // 非工作台
+                    if (resolve_plat[i+1][j+1] == '#') continue;
+                    if (resolve_plat[i+1][j+1] == '1') continue;
+                    if (!flag && resolve_plat[i+1][j+1] == '3') continue;              
+                    precessor[i][j].set(x, y);
+                    double d = (abs(x-i)+abs(y-j)==1) ? dis+dis1*posiWeight[i][j]: dis+dis2*posiWeight[i][j];
+                    if (flag) rtPointDis[idx][i][j] = (abs(x-i)+abs(y-j)==1) ? rtPointDis[idx][x][y]+dis1: rtPointDis[idx][x][y]+dis2;
+                    else wbPointDis[idx][i][j] = (abs(x-i)+abs(y-j)==1) ? wbPointDis[idx][x][y]+dis1: wbPointDis[idx][x][y]+dis2;
+                    visited[i][j] = true;
+                    q.push(dijkstraNode(d, dest));   
+                }         
             }
         }
     }
-    
-}
-
-// 计算从idx号机器人或idx号工作台到指定工作台的最短路（用于寻找到消耗工作台的最短路，携带了物品）
-// 当flag为true时，表示源点为机器人；当flag为false时，表示源点为工作台
-void dijkstra(int idx, coordinate2 src, int wbIdx, coordinate2 dest, bool flag) {
-    // 当前位置已搜索过
-    if (flag) {
-        if (robotCoordinate[idx] == src) return;
-        robotCoordinate[idx] = src;
-        // 原最短路无效
-        for (int i = 0; i < WORKBENCH_SIZE; ++i) {
-            rtPathLength[idx][i] = inf;
-        }
-    }
-    else {
-        for (int i = 0; i < WORKBENCH_SIZE; ++i) {
-            wbPathLength[idx][i] = inf;
-        }
-    }
-    // cerr << "enter sell dijkstra: Frame" << frameID << " robot" << rtidx << " -> " << wbidx << endl;
-
-    bool visited[MAP_SIZE][MAP_SIZE] = {0};
-    priority_queue<dijkstraNode, vector<dijkstraNode>, greater<dijkstraNode>> q;   
-    coordinate2 (&precessor)[MAP_SIZE][MAP_SIZE] = flag ? rtPrecessor[idx] : wbPrecessor[idx];
-    double (&pathLength)[WORKBENCH_SIZE] = flag ? rtPathLength[idx] : wbPathLength[idx];            
-
-    q.push(dijkstraNode(0, src));
-    visited[src.x][src.y] = true;
-    while (!q.empty()) {
-        int x = q.top().coor.x;
-        int y = q.top().coor.y;
-        double dis = q.top().distance;
-        q.pop();
-
-        for (int i = x-1; i <= x+1; ++i) {
-            if (i < 0 || i >= MAP_SIZE) continue;;
-            for (int j = y-1; j <= y+1; ++j) {
-                if (j < 0 || j >= MAP_SIZE) continue;
-                if (resolve_plat[i+1][j+1] == '#') continue;
-                if (resolve_plat[i+1][j+1] == '1') continue;
-                // if (flag && !pathlock_isReachable(idx,i,j)) continue;
-                if (resolve_plat[i+1][j+1] == '3') continue;
-                if (visited[i][j])  continue;
-                precessor[i][j].set(x, y);
-                coordinate2 c(i, j);
-                double d = (abs(x-i)+abs(y-j)==1) ? dis+dis1*posiWeight[i][j]: dis+dis2*posiWeight[i][j];
-                if (flag) rtPointDis[idx][i][j] = (abs(x-i)+abs(y-j)==1) ? rtPointDis[idx][x][y]+dis1: rtPointDis[idx][x][y]+dis2;
-                else wbPointDis[idx][i][j] = (abs(x-i)+abs(y-j)==1) ? wbPointDis[idx][x][y]+dis1: wbPointDis[idx][x][y]+dis2;
-                if (c == dest) {
-                    // 找到工作台
-                    pathLength[wbIdx] = d;
-                    // cerr << "success exit sell dijkstra: Frame" << frameID << " robot" << rtidx << " -> " << wbidx << endl;
-                    return ;
-                }
-                visited[i][j] = true;
-                q.push(dijkstraNode(d, c));           
-            }
-        }
-    }    
 }
 
 // 机器人rtidx调用dijkstra后，将从当前位置到生产工作台，及从生产工作台到消费工作台的最短路进行压缩，并加入任务队列
