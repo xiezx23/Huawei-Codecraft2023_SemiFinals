@@ -170,7 +170,7 @@ void dijkstra(int idx, coordinate2 src, bool flag) {
     q.push(dijkstraNode(0, src));
     visited[src.x][src.y] = true;
     int findk = flag ? 0 : 1;
-    // std::shared_lock<std::shared_timed_mutex> lock(path_mutex);
+    std::shared_lock<std::shared_timed_mutex> lock(path_mutex);
     while (!q.empty()) {
         int x = q.top().coor.x;
         int y = q.top().coor.y;
@@ -185,7 +185,7 @@ void dijkstra(int idx, coordinate2 src, bool flag) {
                 if (resolve_plat[i+1][j+1] == '1') continue;
                 if (!flag && resolve_plat[i+1][j+1] == '3') continue;
                 // 请现在循环外声明std::shared_lock<std::shared_timed_mutex> lock(path_mutex);加共享锁
-                // if (flag && !pathlock_isReachable(idx,i,j,pathlock_getExpectTime(dis))) continue;
+                if (flag && !pathlock_isReachable(idx,i,j,pathlock_getExpectTime(dis))) continue;
                 if (visited[i][j])  continue;
                 precessor[i][j].set(x, y);
                 coordinate2 dest(i, j);

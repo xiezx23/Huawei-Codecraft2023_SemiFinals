@@ -116,6 +116,11 @@ void pathlock_init() {
     // 单行道
     rLabel(0.99, '2');
 
+    for (int i = 0; i < K; i++) {
+        coordinate2 location = wb[i].location;
+        resolve_plat[location.x + 1][location.y + 1] = '2';
+    }
+
     // 合并字符为'2'的连通域，并用a-z标记
     for (int i = 1; i < MAP_SIZE + 1; i++) {
         for (int j = 1; j < MAP_SIZE + 1; j++) {
