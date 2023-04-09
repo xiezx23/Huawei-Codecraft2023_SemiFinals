@@ -23,6 +23,7 @@ void pathdetect_merge(int a,int b) {
     b = pathdetect_find(b);
     if (a != b) {
         pathdetect_f[b] = a;
+        pathdetect_f[a]--;
     }
 }
 
@@ -40,9 +41,8 @@ void pathlock_init() {
         resolve_plat[0][i] = resolve_plat[MAP_SIZE + 1][i] = '#';
     }
 
-    for (int i = 0; i < MAP_SIZE + 2; i++) 
-            for (int j = 0; j < MAP_SIZE + 2; j++)  
-                pathdetect_f[i * (MAP_SIZE + 2) + j] = -1;
+    memset(pathdetect_f, -1, sizeof(pathdetect_f));
+    memset(lockID, 0, sizeof(lockID));
 
     
     // 地图比例尺一格0.5m, 机器人半径0.53m，
@@ -117,32 +117,46 @@ void pathlock_init() {
     rLabel(0.99, '2');
 
     // 合并字符为'2'的连通域，并用a-z标记
-    for (int i = 1; i <= MAP_SIZE + 1; i++) {
-        for (int j = 1; j <= MAP_SIZE + 1; j++) {
+    for (int i = 1; i < MAP_SIZE + 1; i++) {
+        for (int j = 1; j < MAP_SIZE + 1; j++) {
+            int pos = i * (MAP_SIZE + 2) + j;
             if (resolve_plat[i][j] == '2') {
-                int pos = i * (MAP_SIZE + 2) + j;
-                int fa = pathdetect_find(pos);
-                if (fa == pos) {
-                    lockID[i - 1][j - 1] = lockCnt++;
-                } else {
-                    lockID[i - 1][j - 1] = lockID[fa / (MAP_SIZE + 2) - 1][(fa % (MAP_SIZE + 2))-1];
-                }
-
                 if (resolve_plat[i][j + 1] == '2') {
                     pathdetect_merge(pos, pos + 1);
-                } 
+                }
 
                 if (resolve_plat[i + 1][j] == '2') {
                     pathdetect_merge(pos, pos + (MAP_SIZE + 2));
-                    if (resolve_plat[i + 1][j + 1] == '2') {
-                        pathdetect_merge(pos, pos + (MAP_SIZE + 2) + 1);
-                    }
-                    if (resolve_plat[i + 1][j - 1] == '2') {
-                        pathdetect_merge(pos, pos + (MAP_SIZE + 2) - 1);
+                }
+            } else if (resolve_plat[i][j] == '.') {
+                int flag = 1;
+                coordinate2 tmp(0,0);
+                for (int di = -1; di <= 1; di++) {
+                    for (int dj = -1; dj <= 1; dj++) {
+                        if (!di && !dj) continue;
+                        if (resolve_plat[i + di][j + dj] == '1'||resolve_plat[i + di][j + dj] == '.') {
+                            flag = 0;
+                            break;
+                        }else if(resolve_plat[i + di][j + dj] == '2') tmp.set(di,dj);
                     }
                 }
-
+                if (flag) {
+                    pathdetect_merge(pos + tmp.x*(MAP_SIZE + 2) + tmp.y, pos);
+                }
             }
+        }
+    }
+
+    for (int i = 1; i < MAP_SIZE + 1; i++) {
+        for (int j = 1; j < MAP_SIZE + 1; j++) {
+            int pos = i * (MAP_SIZE + 2) + j;
+            int fa = pathdetect_find(pos);
+            if (pathdetect_f[fa] == -1 && resolve_plat[i][j] != '2') {
+                continue;
+            }
+            int &g = lockID[fa / (MAP_SIZE + 2) - 1][(fa % (MAP_SIZE + 2))-1];
+            if (!g) g = lockCnt++;
+            lockID[i - 1][j - 1] = g;
         }
     }
 
@@ -213,9 +227,15 @@ bool pathlock_isLockable(int rtidx, const pathlock_node &rhs, int id) {
         if (i == rtidx) continue;
         int s0 = lockStatus_ts[i].rank(rhs);
         int s1 = lockStatus_ts[i].rank(rhs.e_time + 1);
-        int s2 = lockStatus_te[i].rank(rhs);
-        if (s0 != s1 || s0 != s2) {
+        // 优化查询
+        if (s0 != s1) {
             if (--n < 0) {
+                flag = 0;
+                break;
+            }
+        } else {
+            int s2 = lockStatus_te[i].rank(rhs);
+            if (s2 != s0 && --n < 0) {
                 flag = 0;
                 break;
             }
@@ -286,7 +306,8 @@ void pathlock_release(int rtidx, const coordinate2 &pos, int flag) {
 // dijkstra调用时预估的时间
 pathlock_node pathlock_getExpectTime(double dd){
     int r = dd/3 * 50  - 20;
-    return pathlock_node(r, r + 150);
+    // return pathlock_node(r, r + 150);
+    return pathlock_node(1, 15000);
 }
 
 // 上锁时预估的时间,size用于表示剩余加入栈的节点数量
