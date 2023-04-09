@@ -170,6 +170,7 @@ void dijkstra(int idx, coordinate2 src, bool flag) {
     q.push(dijkstraNode(0, src));
     visited[src.x][src.y] = true;
     int findk = flag ? 0 : 1;
+    // std::shared_lock<std::shared_timed_mutex> lock(path_mutex);
     while (!q.empty()) {
         int x = q.top().coor.x;
         int y = q.top().coor.y;
@@ -183,7 +184,8 @@ void dijkstra(int idx, coordinate2 src, bool flag) {
                 if (resolve_plat[i+1][j+1] == '#') continue;
                 if (resolve_plat[i+1][j+1] == '1') continue;
                 if (!flag && resolve_plat[i+1][j+1] == '3') continue;
-                if (flag && !pathlock_isReachable(idx,i,j)) continue;
+                // 请现在循环外声明std::shared_lock<std::shared_timed_mutex> lock(path_mutex);加共享锁
+                // if (flag && !pathlock_isReachable(idx,i,j,pathlock_getExpectTime(dis))) continue;
                 if (visited[i][j])  continue;
                 precessor[i][j].set(x, y);
                 coordinate2 dest(i, j);
@@ -246,7 +248,7 @@ void dijkstra(int idx, coordinate2 src, int wbIdx, coordinate2 dest, bool flag) 
                 if (j < 0 || j >= MAP_SIZE) continue;
                 if (resolve_plat[i+1][j+1] == '#') continue;
                 if (resolve_plat[i+1][j+1] == '1') continue;
-                if (flag && !pathlock_isReachable(idx,i,j)) continue;
+                // if (flag && !pathlock_isReachable(idx,i,j)) continue;
                 if (resolve_plat[i+1][j+1] == '3') continue;
                 if (visited[i][j])  continue;
                 precessor[i][j].set(x, y);
@@ -271,25 +273,28 @@ void dijkstra(int idx, coordinate2 src, int wbIdx, coordinate2 dest, bool flag) 
 bool compress(int rtIdx, coordinate2 src, int startIdx, coordinate2 dest1, int endIdx, coordinate2 dest2) {
     robot& r = rt[rtIdx]; 
     while (!r.taskQueue.empty()) r.taskQueue.pop();
-    // cerr << "new Task: Frame" << frameID << " robot" << rtIdx << startIdx << " -> " << wbidx << endl;
+    // cerr << "new Task: Frame" << frameID << " robot" << rtIdx << "  "<<startIdx << " -> " << endIdx << endl;
 
     rtAngleSum[rtIdx][startIdx] = 0;
     wbAngleSum[startIdx][endIdx] = 0;
     stack<coordinate2> s1, s2;
     coordinate2 diff, prediff(-2,-2);
     coordinate2 t, t2 = dest1;
+    int lastType = 0,nowType;
 
     // 对去往生产工作台的最短路进行压缩   
     s1.push(dest1);
     t = rtPrecessor[rtIdx][dest1.x][dest1.y];    
     while (t != src) {        
         cmpdir(diff, t2, t);
-        if (diff == prediff && !pathlock_type(t2)) {
+        nowType = pathlock_type(t2);
+        if (diff == prediff && (!nowType ||nowType == lastType)) {
             s1.pop();
         }
         else {            
             rtAngleSum[rtIdx][startIdx] += cntAngle(prediff, diff);
             prediff = diff;
+            lastType = nowType;
         }        
         s1.push(t);
         swap(t,t2);
@@ -303,15 +308,17 @@ bool compress(int rtIdx, coordinate2 src, int startIdx, coordinate2 dest1, int e
     // 对去往消费工作台的最短路进行压缩
     s2.push(dest2);
     t = wbPrecessor[startIdx][dest2.x][dest2.y];
-    t2 = dest2, prediff = coordinate2(-2,-2);
+    t2 = dest2, prediff = coordinate2(-2,-2), lastType = 0;
     while (t != dest1) {        
         cmpdir(diff, t2, t);
-        if (diff == prediff && !pathlock_type(t2)) {
+        nowType = pathlock_type(t2);
+        if (diff == prediff && (!nowType ||nowType == lastType)) {
             s2.pop();
         }
         else { 
             wbAngleSum[startIdx][endIdx] += cntAngle(prediff, diff);
             prediff = diff;
+            lastType = nowType;
         }
         s2.push(t);
         swap(t,t2);
@@ -324,30 +331,36 @@ bool compress(int rtIdx, coordinate2 src, int startIdx, coordinate2 dest1, int e
 
     // 加入任务队列
     int flag = 1; 
-    auto testAndSet = [&](const coordinate2& c, const int &wbIdx, int buy = 0,int sell = 0){
-        if (!pathlock_acquire(rtIdx, c)) {
+    int left = s1.size() + s2.size();
+    auto testAndSet = [&](const coordinate2& c, const int &wbIdx, double dd,int buy = 0,int sell = 0){
+        if (!pathlock_acquire(rtIdx, c, pathlock_getExpectTime(dd,left))) {
             flag = 0;
         } else {
             r.taskQueue.push(task(c, wbIdx, buy, sell));
+            --left;
         }
     };
 
-    std::unique_lock<std::mutex> lock(path_mutex);
+    std::unique_lock<std::shared_timed_mutex> lock(path_mutex);
     while (s1.size() > 1 ) {
-        testAndSet(s1.top(), startIdx);
+        const coordinate2&c = s1.top();
+        testAndSet(c, startIdx,rtPointDis[rtIdx][c.x][c.y]);
         if (!flag) break;
         s1.pop();
     }
     if (flag) {
-        testAndSet(wb[startIdx].location, startIdx, 1, 0);
+        double dd = rtPointDis[rtIdx][dest1.x][dest1.y];
+        testAndSet(dest1, startIdx, dd,1, 0);
         if (flag) {
             while (s2.size() > 1) {
-                testAndSet(s2.top(), endIdx);
+                const coordinate2&c = s2.top();
+                testAndSet(c, endIdx, dd + wbPointDis[startIdx][c.x][c.y]);
                 if (!flag) break;
                 s2.pop();
             }
             if (flag) {
-                testAndSet(wb[endIdx].location, endIdx, 0, 1);
+                dd += wbPointDis[startIdx][dest2.x][dest2.y];
+                testAndSet(dest2, endIdx, dd, 0, 1);
             }
         }
     }
@@ -356,7 +369,7 @@ bool compress(int rtIdx, coordinate2 src, int startIdx, coordinate2 dest1, int e
         // 解锁
         while (!r.taskQueue.empty()) {
             const coordinate2 &c = r.taskQueue.front().destCo;
-            pathlock_release(rtIdx, c);
+            pathlock_release(rtIdx, c, 1);
             r.taskQueue.pop();
         }
 

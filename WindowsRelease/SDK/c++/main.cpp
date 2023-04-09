@@ -1,7 +1,7 @@
 /*** 
  * @Author: Xzx
  * @Date: 2023-03-15 00:10:42
- * @LastEditTime: 2023-04-06 21:25:30
+ * @LastEditTime: 2023-04-09 01:42:58
  * @LastEditors: Xzh
  * @Description: 
  */
@@ -107,8 +107,8 @@ void init() {
 int main() {
     readPlat();
     pathlock_init();
-    init();    
     // printMap();
+    init();     
     puts("OK");
     fflush(stdout);
     while (scanf("%d", &frameID) != EOF) {
