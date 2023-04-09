@@ -151,6 +151,8 @@ void pathlock_init();
 
 // 输出处理后的地图
 void printMap();
+// 输出处理后的地图
+void printMap2();
 
 // 获取锁类型
 int pathlock_type(int x,int y);

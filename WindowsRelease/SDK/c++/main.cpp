@@ -107,8 +107,9 @@ void init() {
 int main() {
     readPlat();
     pathlock_init();
+    init(); 
     // printMap();
-    init();     
+    // printMap2();
     puts("OK");
     fflush(stdout);
     while (scanf("%d", &frameID) != EOF) {

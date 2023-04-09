@@ -127,6 +127,7 @@ void robot::checkTask() {
         else {
             waitFrame = 0;
             waitIncerment = 1;
+            // cerr << "new Mission: Frame" << frameID << ":(robot" << rtIdx << ") " << curMission.startIndex << "->" << curMission.endIndex << endl;
         }
     }
     if (haveTemDest) {
@@ -169,6 +170,9 @@ void robot::findMission(std::vector<mission>& msNode, coordinate& rtCo, vec& lsp
                     // 此时从 wbIdx 到 buyWbIdx 是一个潜在任务
                     mission pot = mission(wbIdx, buyWbIdx, proType);
                     pot.countValue(rtIdx, proType, lsp);
+                    // if (frameID < 100 && rtIdx == 0) {
+                    //     cerr << wbIdx << " -> " << buyWbIdx << ": " << pot.v << endl;
+                    // }
                     msNode.push_back(pot);
                 } 
             }
