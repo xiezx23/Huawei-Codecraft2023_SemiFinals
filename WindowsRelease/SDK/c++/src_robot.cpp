@@ -73,8 +73,7 @@ void robot::checkDest() {
             if (curTask.sell) {
                 // 达到消耗工作台
                 cmd.sell = true;
-                curMission.endIndex = -1;
-                releaseLock(curTask.destCo);
+                
                 taskQueue.pop();
             }              
         }
@@ -112,6 +111,14 @@ void robot::checkTask() {
                 if (compress(rtIdx, location, selected.startIndex, wb[selected.startIndex].location, selected.endIndex, wb[selected.endIndex].location)) {
                     wb[selected.startIndex].reachable = false;    // 该生产工作台不可达
                     wb[selected.endIndex].setProType(selected.proType);
+                    auto releaseLock = [&](const coordinate2 & t) {
+                        std::unique_lock<std::shared_timed_mutex> lock(path_mutex);
+                        pathlock_release(rtIdx, t);
+                    };
+                    if (curMission.endIndex != -1) {
+                        curMission.endIndex = -1;
+                        releaseLock(wb[curMission.endIndex].location);
+                    }
                     curMission = selected;
                     success = true;
                     break;
@@ -120,8 +127,8 @@ void robot::checkTask() {
         }
         if (!success) {
             waitFrame = waitIncerment;
-            waitIncerment += 3;
-            waitIncerment = min(waitIncerment, 20);                    
+            waitIncerment += 0;
+            waitIncerment = min(waitIncerment, 20);     
             return;
         }
         else {
@@ -134,10 +141,12 @@ void robot::checkTask() {
         // 前往临时目的地
         setSpeed(temDest);
     }
-    else if (taskQueue.size()) {
+    else if(taskQueue.size()) {
         // 执行当前任务，前往目的地
         curTask = taskQueue.front();
         setSpeed(pointCorrection(curTask.destCo));
+    } else {
+        if (curMission.endIndex != -1)  setSpeed(wb[curMission.endIndex].location);
     }
 }
 

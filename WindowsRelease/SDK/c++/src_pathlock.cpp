@@ -40,6 +40,7 @@ void pathlock_init() {
         resolve_plat[i][0] = resolve_plat[i][MAP_SIZE + 1] = '#';
         resolve_plat[0][i] = resolve_plat[MAP_SIZE + 1][i] = '#';
     }
+    
 
     memset(pathdetect_f, -1, sizeof(pathdetect_f));
     memset(lockID, 0, sizeof(lockID));
@@ -116,6 +117,7 @@ void pathlock_init() {
     // 单行道
     rLabel(0.99, '2');
 
+
     // 合并字符为'2'的连通域，并用a-z标记
     for (int i = 1; i < MAP_SIZE + 1; i++) {
         for (int j = 1; j < MAP_SIZE + 1; j++) {
@@ -158,6 +160,12 @@ void pathlock_init() {
             if (!g) g = lockCnt++;
             lockID[i - 1][j - 1] = g;
         }
+    }
+    // 独立的工作台单独标2
+    for (int i = 0; i < K; i++) {
+        coordinate2 location = wb[i].location;
+        int &g = lockID[location.x][location.y];
+        if (!g) g = lockCnt++;
     }
 
     // 初始化锁状态
