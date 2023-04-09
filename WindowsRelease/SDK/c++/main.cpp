@@ -1,7 +1,7 @@
 /*** 
  * @Author: Xzx
  * @Date: 2023-03-15 00:10:42
- * @LastEditTime: 2023-04-09 01:42:58
+ * @LastEditTime: 2023-04-09 12:29:50
  * @LastEditors: Xzh
  * @Description: 
  */
@@ -55,6 +55,8 @@ void init() {
         rt[i].waitFrame = 0;
         rt[i].waitIncerment = 1;
     }
+    pathlock_init();
+    printMap();
     initWeight();
     initAccessibility();
     initShortestPath(robotLoc);
@@ -106,9 +108,7 @@ void init() {
 
 int main() {
     readPlat();
-    pathlock_init();
     init(); 
-    // printMap();
     // printMap2();
     puts("OK");
     fflush(stdout);
